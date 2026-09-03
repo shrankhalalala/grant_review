@@ -34,6 +34,26 @@ function readFrontendUrl(value: string | undefined): string {
   }
 }
 
+export function getDatabaseUrl(): string {
+  const databaseUrl = process.env.DATABASE_URL;
+
+  if (!databaseUrl) {
+    throw new Error("DATABASE_URL is required for database operations.");
+  }
+
+  try {
+    const url = new URL(databaseUrl);
+
+    if (url.protocol !== "postgresql:" && url.protocol !== "postgres:") {
+      throw new Error("DATABASE_URL must use the PostgreSQL protocol.");
+    }
+  } catch {
+    throw new Error("DATABASE_URL must be a valid PostgreSQL connection URL.");
+  }
+
+  return databaseUrl;
+}
+
 export const env = {
   port: readPort(process.env.PORT),
   nodeEnv: readNodeEnv(process.env.NODE_ENV),

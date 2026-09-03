@@ -1,0 +1,198 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  PROGRAM_OFFICER
+  REVIEWER
+}
+
+enum ApplicationStatus {
+  SUBMITTED
+  ASSIGNED
+  UNDER_REVIEW
+  DECIDED
+}
+
+enum ReviewStatus {
+  DRAFT
+  COMPLETED
+}
+
+enum FundingDecisionStatus {
+  APPROVED
+  DECLINED
+}
+
+model User {
+  id                  String               @id @default(cuid())
+  email               String               @unique
+  name                String
+  role                UserRole
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  ownedApplications   Application[]        @relation("ApplicationOwner")
+  reviewerAssignments ReviewerAssignment[] @relation("AssignmentReviewer")
+  reviews             Review[]             @relation("ReviewReviewer")
+  conflicts           ConflictOfInterest[] @relation("ConflictReviewer")
+  auditEvents         AuditEvent[]         @relation("AuditActor")
+  fundingDecisions    FundingDecision[]    @relation("DecisionMaker")
+
+  @@index([role])
+}
+
+model FundingRound {
+  id           String        @id @default(cuid())
+  name         String        @unique
+  description  String?
+  opensAt      DateTime
+  closesAt     DateTime
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  applications Application[]
+}
+
+model Application {
+  id               String               @id @default(cuid())
+  organizationName String
+  contactEmail     String
+  requestedAmount  Decimal              @db.Decimal(12, 2)
+  submittedAt      DateTime             @default(now())
+  status           ApplicationStatus    @default(SUBMITTED)
+  archivedAt       DateTime?
+  ownerId          String
+  fundingRoundId   String
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  owner            User                 @relation("ApplicationOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  fundingRound     FundingRound         @relation(fields: [fundingRoundId], references: [id], onDelete: Restrict)
+  assignments      ReviewerAssignment[]
+  reviews          Review[]
+  conflicts        ConflictOfInterest[]
+  auditEvents      AuditEvent[]
+  fundingDecision  FundingDecision?
+
+  @@index([status])
+  @@index([fundingRoundId])
+  @@index([ownerId])
+  @@index([submittedAt])
+  @@index([archivedAt])
+  @@index([organizationName])
+  @@index([contactEmail])
+}
+
+model ReviewerAssignment {
+  id                  String         @id @default(cuid())
+  applicationId       String
+  reviewerId          String
+  activeAssignmentKey String?        @unique
+  assignedAt          DateTime       @default(now())
+  dueAt               DateTime
+  completedAt         DateTime?
+  removedAt           DateTime?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  application         Application    @relation(fields: [applicationId], references: [id], onDelete: Restrict)
+  reviewer            User           @relation("AssignmentReviewer", fields: [reviewerId], references: [id], onDelete: Restrict)
+  review              Review?
+  overdueAlerts       OverdueAlert[]
+
+  @@index([applicationId])
+  @@index([reviewerId])
+  @@index([dueAt])
+  @@index([completedAt])
+  @@index([removedAt])
+  @@index([reviewerId, removedAt])
+}
+
+model Review {
+  id                       String             @id @default(cuid())
+  applicationId            String
+  reviewerId               String
+  assignmentId             String             @unique
+  status                   ReviewStatus       @default(DRAFT)
+  impactScore              Int?
+  feasibilityScore         Int?
+  budgetJustificationScore Int?
+  comments                 String?
+  completedAt              DateTime?
+  createdAt                DateTime           @default(now())
+  updatedAt                DateTime           @updatedAt
+  application              Application        @relation(fields: [applicationId], references: [id], onDelete: Restrict)
+  reviewer                 User               @relation("ReviewReviewer", fields: [reviewerId], references: [id], onDelete: Restrict)
+  assignment               ReviewerAssignment @relation(fields: [assignmentId], references: [id], onDelete: Restrict)
+
+  @@unique([applicationId, reviewerId])
+  @@index([applicationId])
+  @@index([reviewerId])
+  @@index([status])
+}
+
+model ConflictOfInterest {
+  id                String      @id @default(cuid())
+  applicationId     String
+  reviewerId        String
+  activeConflictKey String?     @unique
+  reason            String
+  declaredAt        DateTime    @default(now())
+  resolvedAt        DateTime?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  application       Application @relation(fields: [applicationId], references: [id], onDelete: Restrict)
+  reviewer          User        @relation("ConflictReviewer", fields: [reviewerId], references: [id], onDelete: Restrict)
+
+  @@index([applicationId])
+  @@index([reviewerId])
+  @@index([resolvedAt])
+  @@index([applicationId, reviewerId, resolvedAt])
+}
+
+model AuditEvent {
+  id            String      @id @default(cuid())
+  applicationId String
+  actorId       String?
+  eventType     String
+  metadata      Json?
+  createdAt     DateTime    @default(now())
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Restrict)
+  actor         User?       @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([applicationId])
+  @@index([createdAt])
+  @@index([applicationId, createdAt])
+}
+
+model OverdueAlert {
+  id            String             @id @default(cuid())
+  assignmentId  String
+  dueAtSnapshot DateTime
+  triggeredAt   DateTime           @default(now())
+  dismissedAt   DateTime?
+  createdAt     DateTime           @default(now())
+  assignment    ReviewerAssignment @relation(fields: [assignmentId], references: [id], onDelete: Restrict)
+
+  @@index([assignmentId])
+  @@index([triggeredAt])
+  @@index([dismissedAt])
+  @@index([assignmentId, dueAtSnapshot])
+}
+
+model FundingDecision {
+  id            String                @id @default(cuid())
+  applicationId String                @unique
+  decision      FundingDecisionStatus
+  amountAwarded Decimal?              @db.Decimal(12, 2)
+  notes         String?
+  decidedById   String
+  decidedAt     DateTime
+  createdAt     DateTime              @default(now())
+  application   Application           @relation(fields: [applicationId], references: [id], onDelete: Restrict)
+  decidedBy     User                  @relation("DecisionMaker", fields: [decidedById], references: [id], onDelete: Restrict)
+
+  @@index([decidedById])
+  @@index([decidedAt])
+}

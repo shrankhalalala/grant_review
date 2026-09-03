@@ -14,7 +14,7 @@
 - Health check
 - Backend testing foundation
 
-## Phase 3 — Database
+## Phase 3 — Database (Complete)
 - Select and configure PostgreSQL
 - Configure Prisma
 - Design relational schema

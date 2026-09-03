@@ -1,7 +1,7 @@
 # Architecture
 
-This document captures the system shape and its current implementation boundaries. Phase 2 adds the
-backend foundation; database, authentication, and domain functionality remain planned work.
+This document captures the system shape and its current implementation boundaries. The backend
+foundation and initial database persistence are complete; authentication and domain APIs remain planned.
 
 ## Phase 2 backend foundation
 
@@ -20,6 +20,25 @@ The backend is a Node.js application written in TypeScript and served through Ex
 Vitest and Supertest test the exported Express application directly. This keeps tests fast and avoids
 starting a separate HTTP server. As domain features are introduced, route definitions should remain
 thin and services will own the application business logic.
+
+## Phase 3 persistence foundation
+
+The persistence path is now:
+
+Frontend
+  -> Express API
+  -> Prisma
+  -> Supabase-hosted PostgreSQL
+
+Prisma is the typed data-access and migration layer. Supabase is used only to host the PostgreSQL
+database; Supabase Auth, Storage, Edge Functions, and other Supabase services are not part of this
+architecture. The initial migration has been applied and the development seed data has been inserted,
+but no application route currently opens a database connection. Prisma 7 reads `DIRECT_URL` from
+`backend/prisma.config.ts` for CLI and migration operations; runtime database work will use the pooled
+`DATABASE_URL` through the backend configuration helper.
+
+The schema contains relational models and seed data only. Authentication, authorization, CRUD routes,
+and transactional workflow services remain deferred.
 
 ## Planned moving pieces
 
@@ -65,7 +84,6 @@ One representative user action will be reviewer assignment:
 
 ## Not yet implemented
 
-- No database schema or migrations yet
 - No authentication implementation yet
 - No grant application, reviewer assignment, or review workflows yet
 - No deployment configuration yet

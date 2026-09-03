@@ -62,3 +62,74 @@ Vitest and Supertest are used for the backend testing foundation.
 ### Status
 
 Accepted.
+
+## Decision 7 — PostgreSQL + Prisma
+
+### Chose
+
+PostgreSQL as the relational database and Prisma ORM as the TypeScript data-access and migration
+layer.
+
+### Why
+
+The domain depends on explicit relationships, transactional workflow rules, durable constraints, and
+auditable history. PostgreSQL provides a strong relational model, while Prisma provides typed schema
+and client integration with the existing TypeScript backend.
+
+### Rejected
+
+No alternative ORM or persistence model was adopted because the application requirements favor a
+relational, transaction-capable design.
+
+### Status
+
+Accepted.
+
+## Decision 8 — Historical Decisions And Alerts As Separate Records
+
+### Chose
+
+Use a separate `FundingDecision` model and occurrence-based `OverdueAlert` rows rather than mutable
+fields on an application or assignment.
+
+### Why
+
+One final decision per application is easier to query and audit as a dedicated record. Separate alert
+occurrences preserve a dismissed alert while allowing a changed due date to produce a later overdue
+condition.
+
+### Status
+
+Accepted.
+
+## Decision 9 — Supabase Replaces Neon For Hosted PostgreSQL
+
+### Initial Decision
+
+Use Neon as the managed PostgreSQL hosting provider.
+
+### Observed Result
+
+Prisma repeatedly reported P1001 connectivity failures while attempting both Neon pooled and direct
+connections from the development environment.
+
+### Revised Decision
+
+Use Supabase-hosted PostgreSQL instead.
+
+### What Did Not Change
+
+PostgreSQL remains the database, Prisma remains the ORM, and the relational schema design remains the
+same.
+
+### Rationale
+
+Changing the hosting provider reduced setup friction and allowed migration and development to continue.
+Later troubleshooting established that the college Wi-Fi network also blocked outbound PostgreSQL
+connections: after changing networks, the Supabase session pooler on port 5432 was reachable and the
+migration succeeded. This does not establish that Neon itself was defective; it records the information
+available when the hosting decision was revised.
+
+### Status
+
+Accepted; supersedes the initial Neon hosting choice.

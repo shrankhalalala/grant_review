@@ -43,3 +43,46 @@ The initial test run was blocked by the restricted workspace sandbox, which does
 to open its temporary local listener. Re-running the same tests with local network permission resolved
 the environment restriction. The work intentionally stopped at the HTTP and testing foundation;
 database, authentication, and domain logic remain outside the scope.
+
+## Complete Phase 3 database design and Prisma setup
+
+### Prompt
+
+Add PostgreSQL and Prisma, design the relational grant-review schema, provide representative seed data,
+validate the Prisma artifacts, and keep application functionality deferred.
+
+### What you got
+
+A PostgreSQL Prisma schema for users, funding rounds, applications, assignments, reviews, conflicts,
+audit events, overdue-alert occurrences, and funding decisions. The work also added a Prisma 7
+configuration file, generated client, seed script, database URL validation helper, and schema
+documentation covering constraints and future service-level rules.
+
+### What you corrected
+
+Prisma 7 rejected the legacy datasource URL in `schema.prisma`. The URL was moved to
+`prisma.config.ts`, which is the required Prisma 7 configuration location. Prisma's official PostgreSQL
+adapter was added so the seed can connect when a real `DATABASE_URL` is later supplied.
+
+## Complete Phase 3 hosted database migration and verification
+
+### Prompt
+
+Connect the existing PostgreSQL Prisma schema to a hosted database, create the initial migration, seed
+the development dataset, verify persisted counts and decision consistency, and accurately record any
+connection troubleshooting.
+
+### What you got
+
+The initial migration was created and applied, the development seed executed, and the persisted data
+was verified: seven users, two funding rounds, four applications, five assignments, four reviews, one
+conflict, three audit events, one overdue alert, and one funding decision. The decided application has
+three completed reviews and a funding decision. Prisma validation, generation, tests, and build passed.
+
+### What you corrected
+
+Initial Neon direct and pooled connection attempts returned Prisma P1001 errors. The hosted PostgreSQL
+provider was changed to Supabase, where the initial attempt also failed. Manual network testing showed
+that college Wi-Fi blocked PostgreSQL connections; after changing networks, the Supabase session pooler
+became reachable, allowing the migration and seed to complete. Prisma CLI operations use `DIRECT_URL`,
+while runtime database work retains `DATABASE_URL`.

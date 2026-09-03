@@ -1,13 +1,14 @@
 # Grant Application Review System
 
 This repository is being prepared for a take-home implementation of a Grant Application Review
-System. Phase 1 project setup and the Phase 2 backend foundation are complete.
+System. Phases 1 through 3 are complete: project setup, backend foundation, and database setup.
 
 ## Current status
 
 The repository now includes a minimal TypeScript, Node.js, and Express backend. It exposes
 `GET /health`, uses centralized JSON error handling, and has a Vitest/Supertest testing foundation.
-Database configuration, authentication, and domain functionality have not been implemented.
+It also includes Prisma ORM, a Supabase-hosted PostgreSQL database, the initial relational migration,
+and representative development seed data. Authentication and domain APIs have not been implemented.
 
 ## Repository structure
 
@@ -26,6 +27,8 @@ Database configuration, authentication, and domain functionality have not been i
 │   ├── tests/
 │   ├── .env.example
 │   ├── package.json
+│   ├── prisma/
+│   ├── prisma.config.ts
 │   ├── tsconfig.json
 │   └── vitest.config.ts
 ├── frontend/
@@ -60,7 +63,7 @@ Database configuration, authentication, and domain functionality have not been i
 - `docs/plan.md` contains the full implementation roadmap across all phases
 - `docs/architecture.md` captures the current backend boundaries and planned system shape
 - `docs/decisions.md` records project decisions and trade-offs
-- `docs/schema.md` remains a schema-design placeholder until the data model is implemented
+- `docs/schema.md` describes the implemented relational schema and its enforcement boundaries
 - `docs/ai-prompts.md` logs AI usage as work progresses
 
 ## Notes
