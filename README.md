@@ -1,7 +1,7 @@
 # Grant Application Review System
 
 This repository is being prepared for a take-home implementation of a Grant Application Review
-System. Phases 1 through 6 are complete: project setup, backend foundation, database setup, authentication/authorization, application CRUD, and reviewer assignment.
+System. Phases 1 through 7 are complete: project setup, backend foundation, database setup, authentication/authorization, application CRUD, reviewer assignment, and review workflow.
 
 ## Current status
 
@@ -68,6 +68,10 @@ Phase 5 application routes are Program Officer-only: `POST /applications`, `GET 
 ## Assignment API
 
 Program Officers manage `POST` and `GET /applications/:applicationId/assignments`, plus `PATCH` and `DELETE /assignments/:assignmentId`; Reviewers can use only `GET /reviewer/assignments`. A valid assignment moves a `SUBMITTED` application to `ASSIGNED` and records a status audit event. Archived and decided applications reject new assignments. Removal is historical via `removedAt`, does not change application status, and prevents further due-date edits; removed records remain visible in assignment lists.
+
+## Review API
+
+Reviewers create and retrieve their own drafts at `POST` and `GET /assignments/:assignmentId/review`, edit drafts with `PATCH /reviews/:reviewId`, complete them through `POST /reviews/:reviewId/complete`, and declare assigned-work conflicts through `POST /assignments/:assignmentId/conflict`. Draft scores are optional but must be integer values from 1 to 5 when provided. First draft creation moves `ASSIGNED` applications to `UNDER_REVIEW`; completed reviews are immutable and appear, without drafts, in Program Officer application detail.
 
 ## Documentation
 

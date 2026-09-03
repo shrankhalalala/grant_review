@@ -127,6 +127,18 @@ Implemented Program Officer assignment management, Reviewer self-assignment list
 
 A read-only review found that assignment creation did not move `SUBMITTED` applications to `ASSIGNED`, did not block `DECIDED` applications, and did not write the corresponding status audit event. It also found that soft-removed assignments could still have their due date edited and that direct regression coverage was incomplete. Assignment creation now performs the conditional transition and both audit writes in one transaction, due-date changes reject removed assignments, and focused route tests cover lifecycle, authorization, list history, removal, reassignment, and audit behavior.
 
+## Complete Phase 7 review workflow
+
+Implemented reviewer-owned draft creation, retrieval, editing, completion, score validation, conflict declaration, transactional audit events, and safe completed-review projection on Program Officer application detail. The existing nullable Review fields and unique constraints supported drafts and one review per assignment without a migration.
+
+## Phase 7 review corrections
+
+A read-only review found that permanent reviewer/application Review uniqueness conflicted with Phase 6 historical reassignment and could surface a raw Prisma unique error. The constraint is now scoped to `assignmentId`, with a defensive controlled conflict response for races. The first migration application attempt encountered a Prisma advisory-lock timeout (`P1002`); no reset was used, and a normal retry later confirmed the migration applied successfully.
+
+## Phase 7 regression coverage completion
+
+The second Phase 7 fix pass added direct mocked-Prisma regression coverage for reviewer retrieval and ownership, cross-reviewer and state-based mutation blocking, completed-review conflict refusal, historical reassignment review creation, and completed-only application-detail review projection.
+
 ## Phase 4 review corrections
 
 A read-only review found that malformed JSON parser errors were being mapped to `500`. The central handler now preserves safe 4xx parser statuses with a generic response. Explicit regression tests were added for a missing login email, a correctly signed expired JWT, and malformed JSON.

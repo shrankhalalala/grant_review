@@ -8,6 +8,5 @@ assignmentRouter.get("/reviewer/assignments", authenticate, requireRole(UserRole
 assignmentRouter.use("/applications/:applicationId/assignments", authenticate, requireRole(UserRole.PROGRAM_OFFICER));
 assignmentRouter.post("/applications/:applicationId/assignments", create);
 assignmentRouter.get("/applications/:applicationId/assignments", listForApplication);
-assignmentRouter.use("/assignments/:assignmentId", authenticate, requireRole(UserRole.PROGRAM_OFFICER));
-assignmentRouter.patch("/assignments/:assignmentId", update);
-assignmentRouter.delete("/assignments/:assignmentId", remove);
+assignmentRouter.patch("/assignments/:assignmentId", authenticate, requireRole(UserRole.PROGRAM_OFFICER), update);
+assignmentRouter.delete("/assignments/:assignmentId", authenticate, requireRole(UserRole.PROGRAM_OFFICER), remove);

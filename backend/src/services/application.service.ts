@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { Prisma, ReviewStatus } from "@prisma/client";
 
 import { prisma } from "../config/prisma.js";
 import { HttpError } from "../middleware/errorHandler.js";
@@ -7,6 +7,10 @@ import type { ApplicationInput, ApplicationUpdateInput } from "../types/applicat
 const applicationInclude = {
   fundingRound: { select: { id: true, name: true, opensAt: true, closesAt: true } },
   owner: { select: { id: true, name: true, email: true, role: true } },
+  reviews: {
+    where: { status: ReviewStatus.COMPLETED },
+    select: { id: true, impactScore: true, feasibilityScore: true, budgetJustificationScore: true, comments: true, completedAt: true, reviewer: { select: { id: true, name: true } } },
+  },
 } satisfies Prisma.ApplicationInclude;
 
 type ApplicationRecord = Prisma.ApplicationGetPayload<{ include: typeof applicationInclude }>;

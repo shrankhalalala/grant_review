@@ -36,6 +36,10 @@ Phase 6 treats an assignment as active when it has not been removed and has no c
 `id` is a CUID primary key. It has `applicationId`, `reviewerId`, `assignedAt`, `dueAt`, nullable
 `completedAt`, nullable `removedAt`, and timestamps. `activeAssignmentKey` is nullable but unique: an
 active assignment stores the deterministic `applicationId:reviewerId` value, and removal clears it.
+
+### Review and ConflictOfInterest
+
+`Review` is unique by `assignmentId`, with nullable draft scores and `DRAFT`/`COMPLETED` status. Historical soft-removed assignments retain their reviews, while a reassignment can create a separate review on its new assignment. Completion sets `completedAt`; completed records are immutable. `ConflictOfInterest` stores the server-derived reviewer and application, a required reason, and an active uniqueness key. Active conflicts block review mutations but preserve the assignment and any existing draft.
 This permits historical reassignment records while preventing two active rows for the same pair.
 
 ### Review

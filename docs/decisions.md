@@ -152,6 +152,12 @@ Accepted.
 
 Reviewer assignment removal sets `removedAt` and clears the active key rather than deleting records, preserving visible history and permitting reassignment. A removed assignment cannot be edited and does not regress the application lifecycle. A first valid assignment moves `SUBMITTED` to `ASSIGNED` with an immutable status audit event; archived and decided applications reject new assignments. Program Officers enforce conflict and five-active-assignment checks server-side; concurrent requests are not lock-serialized in this phase.
 
+## Decision 13 — Review Drafts Are Reviewer-Owned And Immutable On Completion
+
+Reviewers are identified only through JWT claims. Draft score fields are nullable, but supplied scores must be integers from 1 through 5; a dedicated completion action requires all three scores and makes the review immutable. The first draft changes `ASSIGNED` to `UNDER_REVIEW`, while archived and decided applications reject review mutations. Conflicts preserve assignments and drafts but block create, edit, and completion. Program Officers see completed reviews only, with safe reviewer data.
+
+Review uniqueness is scoped to `assignmentId`, not permanently to the reviewer/application pair: Phase 6 soft removal allows historical reassignment, and each assignment requires its own review history.
+
 ## Decision 10 — Bcryptjs And Stateless JWT Authentication
 
 ### Chose

@@ -127,7 +127,6 @@ model Review {
   reviewer                 User               @relation("ReviewReviewer", fields: [reviewerId], references: [id], onDelete: Restrict)
   assignment               ReviewerAssignment @relation(fields: [assignmentId], references: [id], onDelete: Restrict)
 
-  @@unique([applicationId, reviewerId])
   @@index([applicationId])
   @@index([reviewerId])
   @@index([status])

@@ -129,6 +129,18 @@ describe("application routes", () => {
     expect(missing.status).toBe(404);
   });
 
+  it("projects completed reviews only with safe reviewer data and exact amounts", async () => {
+    const completedAt = new Date("2026-10-01T00:00:00.000Z");
+    prismaMock.application.findUnique.mockResolvedValue(application({ reviews: [{ id: "review-completed", impactScore: 5, feasibilityScore: 4, budgetJustificationScore: 3, comments: "Completed comments", completedAt, reviewer: { id: reviewer.id, name: "Ava Wilson" } }] }));
+    const response = await request(app).get("/applications/application-1").set("Authorization", `Bearer ${tokenFor(officer)}`);
+    expect(response.status).toBe(200);
+    expect(response.body.application).toMatchObject({ id: "application-1", requestedAmount: "1000.01" });
+    expect(response.body.application.reviews[0]).toMatchObject({ id: "review-completed", comments: "Completed comments", reviewer: { name: "Ava Wilson" } });
+    expect(response.body.application.reviews).not.toContainEqual(expect.objectContaining({ comments: "Draft-only content" }));
+    expect(JSON.stringify(response.body)).not.toContain("passwordHash");
+    expect(prismaMock.application.findUnique).toHaveBeenCalledWith(expect.objectContaining({ include: expect.objectContaining({ reviews: expect.objectContaining({ where: { status: "COMPLETED" } }) }) }));
+  });
+
   it("updates only editable fields and records the update", async () => {
     const response = await request(app).patch("/applications/application-1")
       .set("Authorization", `Bearer ${tokenFor(officer)}`)

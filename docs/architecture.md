@@ -55,6 +55,12 @@ Requested amounts are accepted and returned as decimal strings. The service cons
 
 Program Officers manage application assignments and Reviewers can list only their own assignments. Assignment creation rejects archived and decided applications, duplicate active assignments, unresolved conflicts, and reviewers with five active assignments. A successful assignment moves an application from `SUBMITTED` to `ASSIGNED` within the same transaction and records a status audit event; `ASSIGNED` and `UNDER_REVIEW` are not changed. Removal is a soft change that preserves history and never regresses application status. Removed assignments remain visible in both assignment lists, but cannot have their due date changed; completed reviews also lock due-date changes and removal. Assignment mutations write transactional audit events. The workload count is server-side but does not introduce database locking for concurrent assignment requests.
 
+## Phase 7 review workflow
+
+Reviewer-only routes derive identity from the JWT and verify assignment or review ownership in the service layer. Drafts support nullable 1–5 integer criterion scores and comments; completion is a dedicated immutable transition requiring all scores. The first draft on an `ASSIGNED` application moves it to `UNDER_REVIEW` with an audit event. Archived, decided, removed, conflicted, and cross-reviewer work is rejected. Conflict declarations preserve assignments and drafts but block review mutations. All review mutations and their audit events are transactional. Application detail exposes completed reviews with safe reviewer identity only; drafts remain private.
+
+Review uniqueness is per assignment, so a historical soft-removed assignment retains its review while a later reassignment can receive a separate review.
+
 ## Planned moving pieces
 
 - A frontend application responsible for authentication flows, role-based screens, forms, tables,

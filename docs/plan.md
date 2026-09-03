@@ -43,7 +43,7 @@
 - Assignment removal
 - First-assignment `SUBMITTED` to `ASSIGNED` transition with audit history
 
-## Phase 7 — Review Workflow
+## Phase 7 — Review Workflow (Complete)
 - Review creation
 - Draft reviews
 - Review scoring
