@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const prismaMock = vi.hoisted(() => ({
   user: { findUnique: vi.fn() },
   fundingRound: { findUnique: vi.fn() },
-  application: { create: vi.fn(), findMany: vi.fn(), findUnique: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
+  application: { create: vi.fn(), findMany: vi.fn(), findUnique: vi.fn(), update: vi.fn(), updateMany: vi.fn(), count: vi.fn() },
   review: { count: vi.fn() },
   fundingDecision: { findUnique: vi.fn(), create: vi.fn() },
   auditEvent: { create: vi.fn() },
@@ -65,6 +65,7 @@ describe("application routes", () => {
     prismaMock.application.findUnique.mockReset();
     prismaMock.application.update.mockReset();
     prismaMock.application.updateMany.mockReset();
+    prismaMock.application.count.mockReset();
     prismaMock.review.count.mockReset(); prismaMock.fundingDecision.findUnique.mockReset(); prismaMock.fundingDecision.create.mockReset();
     prismaMock.auditEvent.create.mockReset();
     prismaMock.$transaction.mockReset();
@@ -74,6 +75,7 @@ describe("application routes", () => {
     prismaMock.application.findUnique.mockImplementation(async ({ where }: { where: { id: string } }) =>
       where.id === "missing" ? null : application());
     prismaMock.application.findMany.mockResolvedValue([application()]);
+    prismaMock.application.count.mockResolvedValue(1);
     prismaMock.application.create.mockImplementation(async ({ data }: { data: Record<string, unknown> }) => application({
       ...data,
       requestedAmount: data.requestedAmount,

@@ -2,6 +2,7 @@ import { ApplicationStatus, Prisma, ReviewStatus, UserRole } from "@prisma/clien
 import { prisma } from "../config/prisma.js";
 import { HttpError } from "../middleware/errorHandler.js";
 import type { AssignmentInput } from "../types/assignment.js";
+import type { BulkAssignmentInput } from "../types/discovery.js";
 
 const include = {
   reviewer: { select: { id: true, name: true, email: true, role: true } },
@@ -53,6 +54,23 @@ export async function createAssignment(applicationId: string, input: AssignmentI
     return created;
   });
   return serialize(value);
+}
+
+export async function bulkAssignFundingRound(fundingRoundId: string, input: BulkAssignmentInput, actorId: string) {
+  const fundingRound = await prisma.fundingRound.findUnique({ where: { id: fundingRoundId } });
+  if (!fundingRound) throw new HttpError(404, "Funding round not found.");
+  const applications = await prisma.application.findMany({ where: { fundingRoundId }, select: { id: true } });
+  const results: Array<{ applicationId: string; reviewerId: string; success: boolean; assignment?: unknown; reason?: string }> = [];
+  for (const application of applications) {
+    for (const reviewerId of input.reviewerIds) {
+      try {
+        results.push({ applicationId: application.id, reviewerId, success: true, assignment: await createAssignment(application.id, { reviewerId, dueAt: input.dueAt }, actorId) });
+      } catch (error) {
+        results.push({ applicationId: application.id, reviewerId, success: false, reason: error instanceof HttpError ? error.message : "Assignment could not be created." });
+      }
+    }
+  }
+  return results;
 }
 
 export async function listApplicationAssignments(applicationId: string) {

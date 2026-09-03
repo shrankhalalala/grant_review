@@ -3,6 +3,7 @@ import { ApplicationStatus, FundingDecisionStatus, Prisma, ReviewStatus } from "
 import { prisma } from "../config/prisma.js";
 import { HttpError } from "../middleware/errorHandler.js";
 import type { ApplicationInput, ApplicationUpdateInput } from "../types/application.js";
+import type { ApplicationDiscoveryInput } from "../types/discovery.js";
 
 const applicationInclude = {
   fundingRound: { select: { id: true, name: true, opensAt: true, closesAt: true } },
@@ -99,12 +100,31 @@ export async function createApplication(input: ApplicationInput, ownerId: string
   return serializeApplication(application);
 }
 
-export async function listApplications() {
-  const applications = await prisma.application.findMany({
+export async function listApplications(query: ApplicationDiscoveryInput) {
+  const overdueAssignment: Prisma.ReviewerAssignmentWhereInput = {
+    removedAt: null,
+    dueAt: { lt: new Date() },
+    OR: [{ review: { is: null } }, { review: { is: { status: { not: ReviewStatus.COMPLETED } } } }],
+  };
+  const where: Prisma.ApplicationWhereInput = {
+    ...(query.search && { OR: [{ organizationName: { contains: query.search, mode: "insensitive" } }, { contactEmail: { contains: query.search, mode: "insensitive" } }] }),
+    ...(query.fundingRoundId && { fundingRoundId: query.fundingRoundId }),
+    ...(query.status && { status: query.status }),
+    ...(query.ownerId && { ownerId: query.ownerId }),
+    ...(query.overdue === true && { assignments: { some: overdueAssignment } }),
+    ...(query.overdue === false && { NOT: { assignments: { some: overdueAssignment } } }),
+  };
+  const orderBy: Prisma.ApplicationOrderByWithRelationInput[] = query.sortBy === "submittedAt" && query.sortDirection === "desc"
+    ? [{ submittedAt: "desc" }, { createdAt: "desc" }]
+    : [{ [query.sortBy]: query.sortDirection }, { id: "asc" }];
+  const [applications, total] = await Promise.all([prisma.application.findMany({
+    where,
     include: applicationInclude,
-    orderBy: [{ submittedAt: "desc" }, { createdAt: "desc" }],
-  });
-  return applications.map(serializeApplication);
+    orderBy,
+    skip: (query.page - 1) * query.pageSize,
+    take: query.pageSize,
+  }), prisma.application.count({ where })]);
+  return { applications: applications.map(serializeApplication), total, page: query.page, pageSize: query.pageSize };
 }
 
 export async function getApplication(id: string) {

@@ -2,6 +2,13 @@
 
 The prompts below reflect actual AI-assisted work performed so far on this repository.
 
+## Complete Phase 10 discovery, bulk assignment, and CSV export
+
+Implemented validated server-side application discovery, a per-pair bulk assignment endpoint that
+reuses the Phase 6 service, and completed-review CSV export. Focused tests cover query construction,
+bulk success/refusal results, and CSV filtering/escaping. No new schema migration was needed because
+the existing application, assignment, and review indexes support these query paths.
+
 ## Complete Phase 1 repository initialization
 
 ### Prompt

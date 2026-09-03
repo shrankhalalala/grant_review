@@ -8,6 +8,7 @@ import { applicationRouter } from "./routes/application.routes.js";
 import { assignmentRouter } from "./routes/assignment.routes.js";
 import { healthRouter } from "./routes/health.routes.js";
 import { overdueAlertRouter } from "./routes/overdueAlert.routes.js";
+import { reportingRouter } from "./routes/reporting.routes.js";
 import { reviewRouter } from "./routes/review.routes.js";
 
 export const app = express();
@@ -20,5 +21,6 @@ app.use(applicationRouter);
 app.use(assignmentRouter);
 app.use(reviewRouter);
 app.use(overdueAlertRouter);
+app.use(reportingRouter);
 app.use(notFoundHandler);
 app.use(errorHandler);

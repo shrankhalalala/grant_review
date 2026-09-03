@@ -80,6 +80,16 @@ Program Officers retrieve application history through append-only `AuditEvent` r
 
 Overdue synchronization finds incomplete, unremoved assignments whose due date has passed. An alert occurrence is uniquely identified by assignment and due-date snapshot, so dismissing an alert retains history without suppressing a later due-date occurrence. Active list and badge queries re-check the current assignment, review, and due-date state, excluding completed, removed, dismissed, and superseded occurrences.
 
+## Phase 10 discovery, bulk assignment, and export
+
+Program Officers can query `GET /applications` with validated search, funding-round, status, owner,
+and overdue filters, deterministic sorting, pagination, and a total count. Overdue application filters
+use the same active, incomplete, past-due assignment definition as alert synchronization. Bulk assignment
+accepts a funding round, reviewers, and one due date, then calls the existing assignment service for
+every application/reviewer pair so conflicts, active-duplicate checks, capacity, and lifecycle rules
+remain authoritative. `GET /funding-rounds/:fundingRoundId/reviews/export.csv` returns only completed
+reviews with separate criterion columns and CSV-safe escaping.
+
 ## Planned moving pieces
 
 - A frontend application responsible for authentication flows, role-based screens, forms, tables,
@@ -125,7 +135,7 @@ One representative user action will be reviewer assignment:
 ## Not yet implemented
 
 - No audit-history retrieval or overdue-alert workflow routes yet
-- No search, filtering, reporting, or dashboard endpoints yet
+- No dashboard endpoints yet
 - No frontend implementation or deployment configuration yet
 
 Those concerns remain intentionally deferred to later phases to keep each increment focused.

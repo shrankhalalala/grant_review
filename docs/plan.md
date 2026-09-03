@@ -67,7 +67,7 @@
 - Alert dismissal
 - Alert reappearance after due-date changes
 
-## Phase 10 — Search, Filtering and Reporting
+## Phase 10 — Search, Filtering and Reporting (Complete)
 - Server-side search
 - Filtering
 - Sorting

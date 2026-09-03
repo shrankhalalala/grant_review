@@ -1,10 +1,11 @@
 import { UserRole } from "@prisma/client";
 import { Router } from "express";
-import { create, listForApplication, mine, remove, update } from "../controllers/assignment.controller.js";
+import { bulk, create, listForApplication, mine, remove, update } from "../controllers/assignment.controller.js";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 export const assignmentRouter = Router();
 assignmentRouter.get("/reviewer/assignments", authenticate, requireRole(UserRole.REVIEWER), mine);
+assignmentRouter.post("/funding-rounds/:fundingRoundId/assignments/bulk", authenticate, requireRole(UserRole.PROGRAM_OFFICER), bulk);
 assignmentRouter.use("/applications/:applicationId/assignments", authenticate, requireRole(UserRole.PROGRAM_OFFICER));
 assignmentRouter.post("/applications/:applicationId/assignments", create);
 assignmentRouter.get("/applications/:applicationId/assignments", listForApplication);

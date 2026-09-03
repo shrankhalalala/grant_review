@@ -3,6 +3,7 @@ import type { RequestHandler } from "express";
 import { HttpError } from "../middleware/errorHandler.js";
 import { archiveApplication, createApplication, getApplication, listApplications, moveToUnderReview, recordFundingDecision, restoreApplication, updateApplication } from "../services/application.service.js";
 import { readCreateApplicationInput, readUpdateApplicationInput } from "../utils/applicationValidation.js";
+import { readApplicationDiscovery } from "../utils/discoveryValidation.js";
 
 function requireActorId(request: Parameters<RequestHandler>[0]): string {
   if (!request.auth) throw new HttpError(401, "Authentication required.");
@@ -25,8 +26,8 @@ export const create: RequestHandler = async (request, response, next) => {
   } catch (error) { next(error); }
 };
 
-export const list: RequestHandler = async (_request, response, next) => {
-  try { response.status(200).json({ applications: await listApplications() }); } catch (error) { next(error); }
+export const list: RequestHandler = async (request, response, next) => {
+  try { response.status(200).json(await listApplications(readApplicationDiscovery(request.query))); } catch (error) { next(error); }
 };
 
 export const detail: RequestHandler = async (request, response, next) => {

@@ -219,6 +219,14 @@ confirmed that forwarding the raw related user object risked leaking `passwordHa
 
 Accepted.
 
+## Decision 18 — Server-Side Discovery And Reused Bulk Assignment Rules
+
+Application discovery remains server-side so search, filters, sorting, pagination, and total counts
+reflect the database rather than a partial client cache. Bulk assignment delegates every pair to the
+existing assignment service instead of using bulk inserts, preserving Phase 6 conflict, capacity,
+duplicate, lifecycle, and audit invariants. CSV reporting exports completed reviews only and uses
+separate score columns for portable analysis.
+
 ## Decision 10 — Bcryptjs And Stateless JWT Authentication
 
 ### Chose
