@@ -28,7 +28,7 @@
 - Server-side authorization
 - Protected API routes
 
-## Phase 5 — Grant Applications
+## Phase 5 — Grant Applications (Complete)
 - Funding rounds
 - Application creation
 - Application editing

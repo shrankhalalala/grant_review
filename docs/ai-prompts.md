@@ -101,6 +101,24 @@ The backend now has bcryptjs-backed demo credentials, `POST /auth/login`, protec
 
 Prisma migration generation did not create a new artifact through the Supabase endpoint despite reaching the database. A compatible migration was added without altering existing migration history: it adds the required column with a temporary empty default for existing rows, then removes that default. The idempotent development seed immediately replaces every demo account with a bcrypt hash. No database credentials or JWT secrets were added to tracked files.
 
+## Complete Phase 5 grant application CRUD
+
+### Prompt
+
+Implement Program Officer-only grant application create, list, detail, update, archive, and restore APIs with exact decimal handling, server-controlled ownership, transactional audit events, focused tests, and no reviewer or lifecycle workflow APIs.
+
+### What you got
+
+The backend now exposes protected application CRUD routes. It accepts requested amounts as validated decimal strings, persists them with Prisma Decimal, returns decimal strings, derives ownership from the JWT identity, and rejects direct status, archive-state, and ownership changes. Creation, update, archive, and restore each add an append-only audit event in the same transaction.
+
+### What you corrected
+
+Strict TypeScript identified that Express route parameters may be arrays, so a narrow validated application-ID helper was added before service calls. No database schema change or migration was needed because the existing Application model already met Phase 5 requirements.
+
+## Phase 5 review corrections
+
+A read-only review found that update audit metadata did not identify field-level changes, archived retrieval lacked direct coverage, Reviewer archive/restore denial lacked direct coverage, and the README lacked a route summary. Updates now record only changed editable fields with before/after values; the missing regression tests and concise README route summary were added.
+
 ## Phase 4 review corrections
 
 A read-only review found that malformed JSON parser errors were being mapped to `500`. The central handler now preserves safe 4xx parser statuses with a generic response. Explicit regression tests were added for a missing login email, a correctly signed expired JWT, and malformed JSON.

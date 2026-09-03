@@ -134,6 +134,20 @@ available when the hosting decision was revised.
 
 Accepted; supersedes the initial Neon hosting choice.
 
+## Decision 11 — Application CRUD Uses Decimal Strings And Soft Archive
+
+### Chose
+
+Use decimal strings at the application API boundary, convert directly to Prisma Decimal for persistence, derive ownership from the authenticated Program Officer, and archive by setting `archivedAt`.
+
+### Why
+
+Decimal strings avoid JavaScript floating-point precision loss. Server-controlled ownership prevents clients from assigning applications to another officer. Dedicated archive/restore actions preserve historical data, while the general update route cannot bypass later lifecycle rules. Each application mutation writes an append-only audit event in the same transaction for the future timeline.
+
+### Status
+
+Accepted.
+
 ## Decision 10 — Bcryptjs And Stateless JWT Authentication
 
 ### Chose

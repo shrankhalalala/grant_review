@@ -27,6 +27,8 @@ nullable `archivedAt`, `ownerId`, `fundingRoundId`, and creation/update timestam
 Program Officer and one funding round, and has assignments, reviews, conflicts, audit events, and at
 most one funding decision.
 
+`ownerId` is server-controlled when an application is created and identifies the owning Program Officer. The Phase 5 API accepts `requestedAmount` as an exact decimal string and persists it as `Decimal(12,2)`; responses serialize it as a decimal string. `archivedAt` is changed only by dedicated archive/restore actions, while the general update route cannot change archive state, owner, or lifecycle status. Lifecycle transitions remain a later dedicated workflow.
+
 ### ReviewerAssignment
 
 `id` is a CUID primary key. It has `applicationId`, `reviewerId`, `assignedAt`, `dueAt`, nullable

@@ -1,13 +1,13 @@
 # Grant Application Review System
 
 This repository is being prepared for a take-home implementation of a Grant Application Review
-System. Phases 1 through 4 are complete: project setup, backend foundation, database setup, and authentication/authorization.
+System. Phases 1 through 5 are complete: project setup, backend foundation, database setup, authentication/authorization, and grant application CRUD.
 
 ## Current status
 
 The repository now includes a minimal TypeScript, Node.js, and Express backend. It exposes
 `GET /health`, uses centralized JSON error handling, and has a Vitest/Supertest testing foundation.
-It also includes Prisma ORM, a Supabase-hosted PostgreSQL database, relational migrations, representative development seed data, and stateless JWT bearer authentication. `POST /auth/login` and protected `GET /auth/me` return only safe user data. Program Officer and Reviewer checks are reusable server-side middleware; domain APIs remain intentionally unimplemented.
+It also includes Prisma ORM, a Supabase-hosted PostgreSQL database, relational migrations, representative development seed data, and stateless JWT bearer authentication. Program Officers can create, list, retrieve, update, archive, and restore applications through protected APIs. Amounts use exact decimal strings, and application mutations record immutable audit events. Reviewer workflows and lifecycle transitions remain intentionally unimplemented.
 
 ## Repository structure
 
@@ -60,6 +60,10 @@ It also includes Prisma ORM, a Supabase-hosted PostgreSQL database, relational m
 ## Development demo login
 
 All seeded Program Officer and Reviewer accounts use the development-only password `Demo123!`. For example, use `maya.officer@example.test` for a Program Officer or `ava.reviewer@example.test` for a Reviewer. These credentials are for local demonstration only and must not be used in production.
+
+## Application API
+
+Phase 5 application routes are Program Officer-only: `POST /applications`, `GET /applications`, `GET /applications/:id`, `PATCH /applications/:id`, `POST /applications/:id/archive`, and `POST /applications/:id/restore`. `requestedAmount` uses an exact decimal string such as `"1000.01"`; archive and restore change `archivedAt` rather than deleting the record.
 
 ## Documentation
 

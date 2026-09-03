@@ -37,13 +37,19 @@ but no application route currently opens a database connection. Prisma 7 reads `
 `backend/prisma.config.ts` for CLI and migration operations; runtime database work will use the pooled
 `DATABASE_URL` through the backend configuration helper.
 
-The schema contains relational models, bcrypt password hashes, and seed data. CRUD routes and transactional workflow services remain deferred.
+The schema contains relational models, bcrypt password hashes, and seed data. Reviewer and lifecycle workflow services remain deferred.
 
 ## Phase 4 authentication and authorization
 
 `POST /auth/login` validates an email/password pair against the server-side `User.passwordHash` value and returns a signed JWT plus a safe user profile. The JWT contains only `userId` and `role`; it does not contain credentials or profile data. `GET /auth/me` requires a valid bearer token and reloads a safe profile from the database.
 
 The authentication middleware verifies the JWT signature before attaching identity to the request. Reusable role middleware then enforces Program Officer and Reviewer access on the server. This keeps authorization independent of client-side UI decisions. Access tokens are stateless for the current scope; refresh tokens, cookies, OAuth, and account-management flows are deliberately deferred.
+
+## Phase 5 application CRUD
+
+All `/applications` routes require a valid bearer token and the `PROGRAM_OFFICER` role. Controllers validate input and delegate persistence to the application service. Creation derives the owner from the authenticated identity; general updates cannot change ownership, archive state, or lifecycle status.
+
+Requested amounts are accepted and returned as decimal strings. The service constructs `Prisma.Decimal` values directly, avoiding JavaScript floating-point conversion, and serializes database decimals with two fractional digits. Archive and restore update only `archivedAt`, retaining related records and lifecycle status. Creation, update, archive, and restore each write an append-only `AuditEvent` within the same transaction.
 
 ## Planned moving pieces
 
