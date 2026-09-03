@@ -119,6 +119,14 @@ Strict TypeScript identified that Express route parameters may be arrays, so a n
 
 A read-only review found that update audit metadata did not identify field-level changes, archived retrieval lacked direct coverage, Reviewer archive/restore denial lacked direct coverage, and the README lacked a route summary. Updates now record only changed editable fields with before/after values; the missing regression tests and concise README route summary were added.
 
+## Complete Phase 6 reviewer assignment
+
+Implemented Program Officer assignment management, Reviewer self-assignment listing, due-date editing, soft removal, conflict and workload checks, transactional audit events, and isolated route tests. The existing schema supported the work without a migration.
+
+## Phase 6 review corrections
+
+A read-only review found that assignment creation did not move `SUBMITTED` applications to `ASSIGNED`, did not block `DECIDED` applications, and did not write the corresponding status audit event. It also found that soft-removed assignments could still have their due date edited and that direct regression coverage was incomplete. Assignment creation now performs the conditional transition and both audit writes in one transaction, due-date changes reject removed assignments, and focused route tests cover lifecycle, authorization, list history, removal, reassignment, and audit behavior.
+
 ## Phase 4 review corrections
 
 A read-only review found that malformed JSON parser errors were being mapped to `500`. The central handler now preserves safe 4xx parser statuses with a generic response. Explicit regression tests were added for a missing login email, a correctly signed expired JWT, and malformed JSON.

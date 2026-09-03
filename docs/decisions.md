@@ -148,6 +148,10 @@ Decimal strings avoid JavaScript floating-point precision loss. Server-controlle
 
 Accepted.
 
+## Decision 12 — Reviewer Assignments Preserve History
+
+Reviewer assignment removal sets `removedAt` and clears the active key rather than deleting records, preserving visible history and permitting reassignment. A removed assignment cannot be edited and does not regress the application lifecycle. A first valid assignment moves `SUBMITTED` to `ASSIGNED` with an immutable status audit event; archived and decided applications reject new assignments. Program Officers enforce conflict and five-active-assignment checks server-side; concurrent requests are not lock-serialized in this phase.
+
 ## Decision 10 — Bcryptjs And Stateless JWT Authentication
 
 ### Chose

@@ -51,6 +51,10 @@ All `/applications` routes require a valid bearer token and the `PROGRAM_OFFICER
 
 Requested amounts are accepted and returned as decimal strings. The service constructs `Prisma.Decimal` values directly, avoiding JavaScript floating-point conversion, and serializes database decimals with two fractional digits. Archive and restore update only `archivedAt`, retaining related records and lifecycle status. Creation, update, archive, and restore each write an append-only `AuditEvent` within the same transaction.
 
+## Phase 6 reviewer assignment
+
+Program Officers manage application assignments and Reviewers can list only their own assignments. Assignment creation rejects archived and decided applications, duplicate active assignments, unresolved conflicts, and reviewers with five active assignments. A successful assignment moves an application from `SUBMITTED` to `ASSIGNED` within the same transaction and records a status audit event; `ASSIGNED` and `UNDER_REVIEW` are not changed. Removal is a soft change that preserves history and never regresses application status. Removed assignments remain visible in both assignment lists, but cannot have their due date changed; completed reviews also lock due-date changes and removal. Assignment mutations write transactional audit events. The workload count is server-side but does not introduce database locking for concurrent assignment requests.
+
 ## Planned moving pieces
 
 - A frontend application responsible for authentication flows, role-based screens, forms, tables,

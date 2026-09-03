@@ -35,12 +35,13 @@
 - Application archive/restore
 - Application ownership
 
-## Phase 6 — Reviewer Assignment
+## Phase 6 — Reviewer Assignment (Complete)
 - Reviewer assignment
 - Reviewer workload limits
 - Conflict-of-interest handling
 - Due dates
 - Assignment removal
+- First-assignment `SUBMITTED` to `ASSIGNED` transition with audit history
 
 ## Phase 7 — Review Workflow
 - Review creation

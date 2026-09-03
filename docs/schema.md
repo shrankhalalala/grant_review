@@ -31,6 +31,8 @@ most one funding decision.
 
 ### ReviewerAssignment
 
+Phase 6 treats an assignment as active when it has not been removed and has no completed review. `removedAt` preserves assignment history while `activeAssignmentKey` is cleared on removal. Due dates can change only before review completion and soft removal; removed assignments remain visible in assignment history.
+
 `id` is a CUID primary key. It has `applicationId`, `reviewerId`, `assignedAt`, `dueAt`, nullable
 `completedAt`, nullable `removedAt`, and timestamps. `activeAssignmentKey` is nullable but unique: an
 active assignment stores the deterministic `applicationId:reviewerId` value, and removal clears it.
