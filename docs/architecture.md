@@ -1,7 +1,7 @@
 # Architecture
 
 This document captures the system shape and its current implementation boundaries. The backend
-foundation and initial database persistence are complete; authentication and domain APIs remain planned.
+foundation, initial database persistence, and authentication are complete; domain APIs remain planned.
 
 ## Phase 2 backend foundation
 
@@ -37,8 +37,13 @@ but no application route currently opens a database connection. Prisma 7 reads `
 `backend/prisma.config.ts` for CLI and migration operations; runtime database work will use the pooled
 `DATABASE_URL` through the backend configuration helper.
 
-The schema contains relational models and seed data only. Authentication, authorization, CRUD routes,
-and transactional workflow services remain deferred.
+The schema contains relational models, bcrypt password hashes, and seed data. CRUD routes and transactional workflow services remain deferred.
+
+## Phase 4 authentication and authorization
+
+`POST /auth/login` validates an email/password pair against the server-side `User.passwordHash` value and returns a signed JWT plus a safe user profile. The JWT contains only `userId` and `role`; it does not contain credentials or profile data. `GET /auth/me` requires a valid bearer token and reloads a safe profile from the database.
+
+The authentication middleware verifies the JWT signature before attaching identity to the request. Reusable role middleware then enforces Program Officer and Reviewer access on the server. This keeps authorization independent of client-side UI decisions. Access tokens are stateless for the current scope; refresh tokens, cookies, OAuth, and account-management flows are deliberately deferred.
 
 ## Planned moving pieces
 
@@ -84,7 +89,6 @@ One representative user action will be reviewer assignment:
 
 ## Not yet implemented
 
-- No authentication implementation yet
 - No grant application, reviewer assignment, or review workflows yet
 - No deployment configuration yet
 

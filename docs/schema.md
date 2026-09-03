@@ -9,8 +9,9 @@ indexes.
 ### User
 
 `id` is a CUID string primary key. `email` is a unique string, `name` is a string, and `role` is the
-`UserRole` enum (`PROGRAM_OFFICER` or `REVIEWER`). `createdAt` and `updatedAt` are timestamps. One
-user can own applications, receive reviewer assignments, write reviews, declare conflicts, act in
+`UserRole` enum (`PROGRAM_OFFICER` or `REVIEWER`). `passwordHash` is a required bcrypt hash managed
+only by the backend; plaintext passwords are never stored. `createdAt` and `updatedAt` are timestamps.
+One user can own applications, receive reviewer assignments, write reviews, declare conflicts, act in
 audit events, and record funding decisions.
 
 ### FundingRound

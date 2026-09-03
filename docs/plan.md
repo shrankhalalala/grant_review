@@ -21,7 +21,7 @@
 - Create migrations
 - Create seed/demo data
 
-## Phase 4 — Authentication and Authorization
+## Phase 4 — Authentication and Authorization (Complete)
 - User authentication
 - Program Officer role
 - Reviewer role

@@ -86,3 +86,21 @@ provider was changed to Supabase, where the initial attempt also failed. Manual 
 that college Wi-Fi blocked PostgreSQL connections; after changing networks, the Supabase session pooler
 became reachable, allowing the migration and seed to complete. Prisma CLI operations use `DIRECT_URL`,
 while runtime database work retains `DATABASE_URL`.
+
+## Complete Phase 4 authentication and authorization
+
+### Prompt
+
+Implement only password hashing, email/password login, JWT bearer authentication, current-user lookup, server-side Program Officer and Reviewer authorization, migrations, tests, and concise documentation.
+
+### What you got
+
+The backend now has bcryptjs-backed demo credentials, `POST /auth/login`, protected `GET /auth/me`, a reusable Prisma client, signed JWT access tokens, authenticated-request typing, and role middleware. Focused integration tests cover successful and failed login behavior, safe response shapes, bearer-token validation, and both role combinations. The password-hash migration was applied and the seed was rerun.
+
+### What you corrected
+
+Prisma migration generation did not create a new artifact through the Supabase endpoint despite reaching the database. A compatible migration was added without altering existing migration history: it adds the required column with a temporary empty default for existing rows, then removes that default. The idempotent development seed immediately replaces every demo account with a bcrypt hash. No database credentials or JWT secrets were added to tracked files.
+
+## Phase 4 review corrections
+
+A read-only review found that malformed JSON parser errors were being mapped to `500`. The central handler now preserves safe 4xx parser statuses with a generic response. Explicit regression tests were added for a missing login email, a correctly signed expired JWT, and malformed JSON.

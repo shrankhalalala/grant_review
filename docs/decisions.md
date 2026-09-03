@@ -133,3 +133,21 @@ available when the hosting decision was revised.
 ### Status
 
 Accepted; supersedes the initial Neon hosting choice.
+
+## Decision 10 — Bcryptjs And Stateless JWT Authentication
+
+### Chose
+
+Use bcryptjs password hashes, signed JWT bearer tokens, and reusable server-side role middleware.
+
+### Why
+
+The current application needs a small email/password authentication boundary without a full framework. Bcryptjs prevents plaintext password persistence, while stateless access tokens keep this phase focused on login and protected API access. JWTs carry only user identity and role; the backend verifies them and enforces Program Officer or Reviewer permissions independently of any client behavior.
+
+### Deferred
+
+Refresh tokens, password resets, email verification, OAuth, sessions, and registration remain out of scope until later requirements justify them.
+
+### Status
+
+Accepted.

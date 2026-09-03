@@ -1,14 +1,13 @@
 # Grant Application Review System
 
 This repository is being prepared for a take-home implementation of a Grant Application Review
-System. Phases 1 through 3 are complete: project setup, backend foundation, and database setup.
+System. Phases 1 through 4 are complete: project setup, backend foundation, database setup, and authentication/authorization.
 
 ## Current status
 
 The repository now includes a minimal TypeScript, Node.js, and Express backend. It exposes
 `GET /health`, uses centralized JSON error handling, and has a Vitest/Supertest testing foundation.
-It also includes Prisma ORM, a Supabase-hosted PostgreSQL database, the initial relational migration,
-and representative development seed data. Authentication and domain APIs have not been implemented.
+It also includes Prisma ORM, a Supabase-hosted PostgreSQL database, relational migrations, representative development seed data, and stateless JWT bearer authentication. `POST /auth/login` and protected `GET /auth/me` return only safe user data. Program Officer and Reviewer checks are reusable server-side middleware; domain APIs remain intentionally unimplemented.
 
 ## Repository structure
 
@@ -57,6 +56,10 @@ and representative development seed data. Authentication and domain APIs have no
 - A TypeScript and Express backend with a testable application/server boundary
 - Centralized environment configuration, JSON error handling, and a health endpoint
 - A repository ready for incremental database and domain development in later phases
+
+## Development demo login
+
+All seeded Program Officer and Reviewer accounts use the development-only password `Demo123!`. For example, use `maya.officer@example.test` for a Program Officer or `ava.reviewer@example.test` for a Reviewer. These credentials are for local demonstration only and must not be used in production.
 
 ## Documentation
 

@@ -1,5 +1,6 @@
 import { Prisma, PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import bcrypt from "bcryptjs";
 
 import { getDatabaseUrl } from "../src/config/env.js";
 
@@ -15,7 +16,11 @@ const ids = {
   assignments: ["assignment-1", "assignment-2", "assignment-3", "assignment-4", "assignment-5"],
 };
 
+const demoPassword = "Demo123!";
+
 async function main() {
+  const passwordHash = await bcrypt.hash(demoPassword, 12);
+
   await prisma.overdueAlert.deleteMany();
   await prisma.auditEvent.deleteMany();
   await prisma.fundingDecision.deleteMany();
@@ -28,13 +33,13 @@ async function main() {
 
   await prisma.user.createMany({
     data: [
-      { id: ids.officers[0], email: "maya.officer@example.test", name: "Maya Patel", role: "PROGRAM_OFFICER" },
-      { id: ids.officers[1], email: "liam.officer@example.test", name: "Liam Chen", role: "PROGRAM_OFFICER" },
-      { id: ids.reviewers[0], email: "ava.reviewer@example.test", name: "Ava Wilson", role: "REVIEWER" },
-      { id: ids.reviewers[1], email: "noah.reviewer@example.test", name: "Noah Garcia", role: "REVIEWER" },
-      { id: ids.reviewers[2], email: "emma.reviewer@example.test", name: "Emma Brown", role: "REVIEWER" },
-      { id: ids.reviewers[3], email: "oliver.reviewer@example.test", name: "Oliver Davis", role: "REVIEWER" },
-      { id: ids.reviewers[4], email: "sophia.reviewer@example.test", name: "Sophia Martinez", role: "REVIEWER" },
+      { id: ids.officers[0], email: "maya.officer@example.test", name: "Maya Patel", role: "PROGRAM_OFFICER", passwordHash },
+      { id: ids.officers[1], email: "liam.officer@example.test", name: "Liam Chen", role: "PROGRAM_OFFICER", passwordHash },
+      { id: ids.reviewers[0], email: "ava.reviewer@example.test", name: "Ava Wilson", role: "REVIEWER", passwordHash },
+      { id: ids.reviewers[1], email: "noah.reviewer@example.test", name: "Noah Garcia", role: "REVIEWER", passwordHash },
+      { id: ids.reviewers[2], email: "emma.reviewer@example.test", name: "Emma Brown", role: "REVIEWER", passwordHash },
+      { id: ids.reviewers[3], email: "oliver.reviewer@example.test", name: "Oliver Davis", role: "REVIEWER", passwordHash },
+      { id: ids.reviewers[4], email: "sophia.reviewer@example.test", name: "Sophia Martinez", role: "REVIEWER", passwordHash },
     ],
   });
 

@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 dotenv.config({ quiet: true });
 
 const validNodeEnvironments = new Set(["development", "test", "production"]);
+const jwtExpirationPattern = /^\d+[smhd]$/;
 
 function readPort(value: string | undefined): number {
   const port = Number(value ?? 4000);
@@ -34,6 +35,22 @@ function readFrontendUrl(value: string | undefined): string {
   }
 }
 
+function readJwtSecret(value: string | undefined): string {
+  if (!value || value.length < 32) {
+    throw new Error("JWT_SECRET must be at least 32 characters long.");
+  }
+
+  return value;
+}
+
+function readJwtExpiresIn(value: string | undefined): string {
+  if (!value || !jwtExpirationPattern.test(value)) {
+    throw new Error("JWT_EXPIRES_IN must be a positive duration such as 1h or 30m.");
+  }
+
+  return value;
+}
+
 export function getDatabaseUrl(): string {
   const databaseUrl = process.env.DATABASE_URL;
 
@@ -58,4 +75,6 @@ export const env = {
   port: readPort(process.env.PORT),
   nodeEnv: readNodeEnv(process.env.NODE_ENV),
   frontendUrl: readFrontendUrl(process.env.FRONTEND_URL),
+  jwtSecret: readJwtSecret(process.env.JWT_SECRET),
+  jwtExpiresIn: readJwtExpiresIn(process.env.JWT_EXPIRES_IN),
 };

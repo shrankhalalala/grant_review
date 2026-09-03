@@ -33,6 +33,7 @@ model User {
   email               String               @unique
   name                String
   role                UserRole
+  passwordHash        String
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
   ownedApplications   Application[]        @relation("ApplicationOwner")
