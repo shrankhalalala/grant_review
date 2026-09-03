@@ -199,6 +199,16 @@ Accepted.
 Return application-detail decisions through the singular `fundingDecision` field and explicitly
 serialize only safe decision-actor fields.
 
+## Decision 17 — Append-Only Timeline Comments And Occurrence-Based Alerts
+
+Application history remains append-only through `AuditEvent`; Program Officers can add immutable
+timeline comments, which are blocked for archived applications but allowed after a decision as
+informational notes. Timeline and comments are Program Officer-only. Overdue alerts are historical
+occurrences identified by assignment and due-date snapshot, and dismissal is idempotent. Current
+lists and badge counts re-check live assignment and review state, excluding completed, removed,
+dismissed, and superseded occurrences. A database unique constraint and narrow `P2002` handling
+protect concurrent synchronization.
+
 ### Why
 
 The relation is one-to-one in the schema, so the API contract should expose either one decision or

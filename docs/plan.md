@@ -60,7 +60,7 @@
 - Draft exclusion from the decision threshold
 - Dedicated funding decisions
 
-## Phase 9 — Audit History and Alerts
+## Phase 9 — Audit History and Alerts (Complete)
 - Immutable application history
 - Audit events
 - Overdue review detection

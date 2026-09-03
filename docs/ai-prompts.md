@@ -184,3 +184,19 @@ no duplicate lifecycle audit. The funding-decision workflow preserves the databa
 constraint and translates only its `P2002` unique-constraint race into the same safe `409` duplicate
 decision response. Focused regressions cover both guarded status-transition and duplicate-decision
 race outcomes.
+
+## Complete Phase 9 audit timeline, comments, and overdue alerts
+
+Implemented Program Officer-only timeline retrieval and immutable application comments through
+`AuditEvent`, plus overdue alert list, badge count, and idempotent dismissal APIs. Overdue alerts are
+synchronized from incomplete, unremoved past-due assignments and preserve historical occurrences.
+A unique assignment and due-date snapshot constraint prevents duplicate alerts, while a later due
+date can create a new occurrence after it becomes overdue. Current alerts exclude dismissed,
+completed, removed, and superseded assignments; comments are blocked on archived applications and
+allowed on decided applications as informational notes.
+
+## Phase 9 review corrections
+
+A read-only review found no production blocker, but direct overdue lifecycle and decided-comment
+coverage was incomplete and the schema documentation duplicated two sections. Focused regression
+tests were added and the `AuditEvent` and `OverdueAlert` documentation was consolidated.

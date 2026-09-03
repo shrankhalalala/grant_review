@@ -61,13 +61,17 @@ preventing duplicate unresolved declarations.
 
 `id` is a CUID primary key. It stores `applicationId`, nullable `actorId`, a flexible `eventType`
 string, nullable JSON `metadata`, and `createdAt`. It deliberately has no `updatedAt`; application
-services will treat this model as append-only history.
+services treat this model as append-only history. Phase 9 application timelines expose these events,
+and immutable application comments use `APPLICATION_COMMENT_ADDED` metadata. There are no event edit
+or delete APIs.
 
 ### OverdueAlert
 
 `id` is a CUID primary key. It stores `assignmentId`, `dueAtSnapshot`, `triggeredAt`, nullable
 `dismissedAt`, and `createdAt`. Each row represents an occurrence rather than a mutable assignment
-flag, so a later due-date change can generate a new alert while a prior dismissal remains historical.
+flag, so a dismissed occurrence is retained and not recreated, while a later due-date change can
+generate a new alert. The unique `(assignmentId, dueAtSnapshot)` constraint provides the concurrent
+duplicate guard.
 
 ### FundingDecision
 

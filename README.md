@@ -83,6 +83,10 @@ Program Officers can explicitly move an assigned application into active review 
 
 Final decisions use the dedicated `POST /applications/:id/decision` route with `{ "decision": "APPROVED" }` or `{ "decision": "DECLINED" }`. A decision is allowed only from `UNDER_REVIEW`, requires at least three completed reviews, excludes drafts from the threshold, writes transactional lifecycle and decision audit events, and creates one immutable `FundingDecision` record per application. Application detail returns this record as `fundingDecision`, or `null` when undecided.
 
+## Timeline And Alerts API
+
+Program Officers can retrieve append-only application history at `GET /applications/:applicationId/timeline` and add immutable informational comments at `POST /applications/:applicationId/comments`. Comments are blocked for archived applications and remain allowed after a decision. `GET /alerts/overdue`, `GET /alerts/overdue/count`, and `POST /alerts/overdue/:alertId/dismiss` provide active overdue-review alerts, a navigation-badge count, and idempotent dismissal. Alerts are retained historically and each assignment due-date occurrence can create only one alert.
+
 ## Documentation
 
 - `docs/plan.md` contains the full implementation roadmap across all phases

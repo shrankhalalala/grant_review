@@ -74,6 +74,12 @@ Program Officers have two distinct lifecycle controls. `POST /applications/:id/s
 
 Application detail now projects a singular `fundingDecision` object when present and `null` otherwise. The decision actor is narrowed to safe identity fields so `passwordHash` and other internal user data cannot leak through the serializer.
 
+## Phase 9 timeline comments and overdue alerts
+
+Program Officers retrieve application history through append-only `AuditEvent` rows, ordered by creation timestamp and event id. Application comments are immutable `APPLICATION_COMMENT_ADDED` audit events, blocked for archived applications but allowed for decided applications as informational notes. There are no audit-event edit or delete routes.
+
+Overdue synchronization finds incomplete, unremoved assignments whose due date has passed. An alert occurrence is uniquely identified by assignment and due-date snapshot, so dismissing an alert retains history without suppressing a later due-date occurrence. Active list and badge queries re-check the current assignment, review, and due-date state, excluding completed, removed, dismissed, and superseded occurrences.
+
 ## Planned moving pieces
 
 - A frontend application responsible for authentication flows, role-based screens, forms, tables,

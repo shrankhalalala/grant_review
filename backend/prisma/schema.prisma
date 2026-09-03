@@ -178,7 +178,7 @@ model OverdueAlert {
   @@index([assignmentId])
   @@index([triggeredAt])
   @@index([dismissedAt])
-  @@index([assignmentId, dueAtSnapshot])
+  @@unique([assignmentId, dueAtSnapshot])
 }
 
 model FundingDecision {
