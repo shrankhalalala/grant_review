@@ -1,7 +1,9 @@
 # Architecture
 
 This document captures the system shape and its current implementation boundaries. The backend
-foundation, initial database persistence, and authentication are complete; domain APIs remain planned.
+foundation, database persistence, authentication, application workflows, reviewer assignment,
+review workflow, and funding-decision lifecycle are now implemented; frontend work and later
+reporting and alerting phases remain planned.
 
 ## Phase 2 backend foundation
 
@@ -32,12 +34,15 @@ Frontend
 
 Prisma is the typed data-access and migration layer. Supabase is used only to host the PostgreSQL
 database; Supabase Auth, Storage, Edge Functions, and other Supabase services are not part of this
-architecture. The initial migration has been applied and the development seed data has been inserted,
-but no application route currently opens a database connection. Prisma 7 reads `DIRECT_URL` from
-`backend/prisma.config.ts` for CLI and migration operations; runtime database work will use the pooled
-`DATABASE_URL` through the backend configuration helper.
+architecture. The initial migration has been applied and the development seed data has been inserted.
+Application, assignment, review, and funding-decision routes now query and mutate the database
+through Prisma services. Prisma 7 reads `DIRECT_URL` from `backend/prisma.config.ts` for CLI and
+migration operations; runtime database work uses the pooled `DATABASE_URL` through the backend
+configuration helper.
 
-The schema contains relational models, bcrypt password hashes, and seed data. Reviewer and lifecycle workflow services remain deferred.
+The schema contains relational models, bcrypt password hashes, and seed data. Application CRUD,
+assignment workflow, review workflow, and funding decisions all use this existing schema without
+adding a Phase 8 migration.
 
 ## Phase 4 authentication and authorization
 
@@ -60,6 +65,14 @@ Program Officers manage application assignments and Reviewers can list only thei
 Reviewer-only routes derive identity from the JWT and verify assignment or review ownership in the service layer. Drafts support nullable 1–5 integer criterion scores and comments; completion is a dedicated immutable transition requiring all scores. The first draft on an `ASSIGNED` application moves it to `UNDER_REVIEW` with an audit event. Archived, decided, removed, conflicted, and cross-reviewer work is rejected. Conflict declarations preserve assignments and drafts but block review mutations. All review mutations and their audit events are transactional. Application detail exposes completed reviews with safe reviewer identity only; drafts remain private.
 
 Review uniqueness is per assignment, so a historical soft-removed assignment retains its review while a later reassignment can receive a separate review.
+
+## Phase 8 application lifecycle and funding decisions
+
+Program Officers have two distinct lifecycle controls. `POST /applications/:id/status` supports only the explicit `ASSIGNED` to `UNDER_REVIEW` transition, preserving the assignment requirement that officers can actively start the review stage when needed. Its transaction uses a conditional current-state update, so competing lifecycle requests cannot both create a transition audit event. The existing Phase 7 first-draft transition remains compatible because it targets the same destination and still writes the same class of status audit event.
+
+`DECIDED` is intentionally unreachable through the generic status route. Finalization uses `POST /applications/:id/decision`, which validates that the application is currently `UNDER_REVIEW`, is not archived, has no prior funding decision, and has at least three completed reviews. Draft reviews are excluded from that count. The service performs the decision insert, application status change, and both audit events in one transaction. The database uniqueness guard remains authoritative for races and its duplicate-decision violation is translated to a controlled conflict response.
+
+Application detail now projects a singular `fundingDecision` object when present and `null` otherwise. The decision actor is narrowed to safe identity fields so `passwordHash` and other internal user data cannot leak through the serializer.
 
 ## Planned moving pieces
 
@@ -105,7 +118,8 @@ One representative user action will be reviewer assignment:
 
 ## Not yet implemented
 
-- No grant application, reviewer assignment, or review workflows yet
-- No deployment configuration yet
+- No audit-history retrieval or overdue-alert workflow routes yet
+- No search, filtering, reporting, or dashboard endpoints yet
+- No frontend implementation or deployment configuration yet
 
-Those concerns remain intentionally deferred to later phases so the foundation can stay focused.
+Those concerns remain intentionally deferred to later phases to keep each increment focused.

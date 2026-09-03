@@ -1,13 +1,17 @@
 # Grant Application Review System
 
 This repository is being prepared for a take-home implementation of a Grant Application Review
-System. Phases 1 through 7 are complete: project setup, backend foundation, database setup, authentication/authorization, application CRUD, reviewer assignment, and review workflow.
+System. Phases 1 through 8 are complete: project setup, backend foundation, database setup, authentication/authorization, application CRUD, reviewer assignment, review workflow, and application lifecycle with funding decisions.
 
 ## Current status
 
-The repository now includes a minimal TypeScript, Node.js, and Express backend. It exposes
-`GET /health`, uses centralized JSON error handling, and has a Vitest/Supertest testing foundation.
-It also includes Prisma ORM, a Supabase-hosted PostgreSQL database, relational migrations, representative development seed data, and stateless JWT bearer authentication. Program Officers can create, list, retrieve, update, archive, and restore applications through protected APIs. Amounts use exact decimal strings, and application mutations record immutable audit events. Program Officers can also assign reviewers, update eligible assignment due dates, and soft-remove assignments; Reviewers can list only their own assignment history.
+The repository now includes a TypeScript, Node.js, and Express backend with centralized JSON error
+handling, a Vitest/Supertest testing foundation, Prisma ORM, and a Supabase-hosted PostgreSQL
+database. It implements stateless JWT bearer authentication plus protected workflows for Program
+Officer application management, reviewer assignment, reviewer draft and completed reviews, explicit
+application lifecycle movement into `UNDER_REVIEW`, and final funding decisions once review
+requirements are met. Amounts use exact decimal strings, archived records stay retrievable, and
+workflow mutations record immutable audit events.
 
 ## Repository structure
 
@@ -55,7 +59,7 @@ It also includes Prisma ORM, a Supabase-hosted PostgreSQL database, relational m
 - A clean root-level frontend/backend split
 - A TypeScript and Express backend with a testable application/server boundary
 - Centralized environment configuration, JSON error handling, and a health endpoint
-- A repository ready for incremental database and domain development in later phases
+- Implemented database, authentication, application, assignment, review, and decision workflows
 
 ## Development demo login
 
@@ -73,6 +77,12 @@ Program Officers manage `POST` and `GET /applications/:applicationId/assignments
 
 Reviewers create and retrieve their own drafts at `POST` and `GET /assignments/:assignmentId/review`, edit drafts with `PATCH /reviews/:reviewId`, complete them through `POST /reviews/:reviewId/complete`, and declare assigned-work conflicts through `POST /assignments/:assignmentId/conflict`. Draft scores are optional but must be integer values from 1 to 5 when provided. First draft creation moves `ASSIGNED` applications to `UNDER_REVIEW`; completed reviews are immutable and appear, without drafts, in Program Officer application detail.
 
+## Lifecycle And Decision API
+
+Program Officers can explicitly move an assigned application into active review with `POST /applications/:id/status` and `{ "status": "UNDER_REVIEW" }`. The generic status route cannot set `DECIDED`, archived applications reject lifecycle mutation, and the existing automatic Phase 7 transition on first draft creation remains valid.
+
+Final decisions use the dedicated `POST /applications/:id/decision` route with `{ "decision": "APPROVED" }` or `{ "decision": "DECLINED" }`. A decision is allowed only from `UNDER_REVIEW`, requires at least three completed reviews, excludes drafts from the threshold, writes transactional lifecycle and decision audit events, and creates one immutable `FundingDecision` record per application. Application detail returns this record as `fundingDecision`, or `null` when undecided.
+
 ## Documentation
 
 - `docs/plan.md` contains the full implementation roadmap across all phases
@@ -84,4 +94,4 @@ Reviewers create and retrieve their own drafts at `POST` and `GET /assignments/:
 ## Notes
 
 - `SUBMISSION.md` has been preserved as-is for later completion.
-- Run `npm test` and `npm run build` from `backend/` to validate the current backend foundation.
+- Run `npm test` and `npm run build` from `backend/` to validate the current backend implementation.

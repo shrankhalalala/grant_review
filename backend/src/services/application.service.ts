@@ -1,4 +1,4 @@
-import { Prisma, ReviewStatus } from "@prisma/client";
+import { ApplicationStatus, FundingDecisionStatus, Prisma, ReviewStatus } from "@prisma/client";
 
 import { prisma } from "../config/prisma.js";
 import { HttpError } from "../middleware/errorHandler.js";
@@ -11,6 +11,7 @@ const applicationInclude = {
     where: { status: ReviewStatus.COMPLETED },
     select: { id: true, impactScore: true, feasibilityScore: true, budgetJustificationScore: true, comments: true, completedAt: true, reviewer: { select: { id: true, name: true } } },
   },
+  fundingDecision: { select: { id: true, decision: true, decidedAt: true, notes: true, decidedBy: { select: { id: true, name: true } } } },
 } satisfies Prisma.ApplicationInclude;
 
 type ApplicationRecord = Prisma.ApplicationGetPayload<{ include: typeof applicationInclude }>;
@@ -19,6 +20,13 @@ function serializeApplication(application: ApplicationRecord) {
   return {
     ...application,
     requestedAmount: application.requestedAmount.toFixed(2),
+    fundingDecision: application.fundingDecision && {
+      id: application.fundingDecision.id,
+      decision: application.fundingDecision.decision,
+      decidedAt: application.fundingDecision.decidedAt,
+      notes: application.fundingDecision.notes,
+      decidedBy: { id: application.fundingDecision.decidedBy.id, name: application.fundingDecision.decidedBy.name },
+    },
   };
 }
 
@@ -157,4 +165,44 @@ export function archiveApplication(id: string, actorId: string) {
 
 export function restoreApplication(id: string, actorId: string) {
   return changeArchiveState(id, actorId, false);
+}
+
+async function lifecycleApplication(id: string) {
+  const application = await prisma.application.findUnique({ where: { id } });
+  if (!application) throw new HttpError(404, "Application not found.");
+  if (application.archivedAt) throw new HttpError(409, "Archived applications cannot be changed.");
+  return application;
+}
+
+export async function moveToUnderReview(id: string, actorId: string) {
+  const existing = await lifecycleApplication(id);
+  if (existing.status !== ApplicationStatus.ASSIGNED) throw new HttpError(409, existing.status === ApplicationStatus.UNDER_REVIEW ? "Application is already under review." : "Application must be assigned before review can begin.");
+  return prisma.$transaction(async (tx) => {
+    const transition = await tx.application.updateMany({ where: { id, status: ApplicationStatus.ASSIGNED, archivedAt: null }, data: { status: ApplicationStatus.UNDER_REVIEW } });
+    if (transition.count !== 1) throw new HttpError(409, "Application must be assigned before review can begin.");
+    const application = await tx.application.findUnique({ where: { id }, include: applicationInclude });
+    if (!application) throw new HttpError(404, "Application not found.");
+    await tx.auditEvent.create({ data: { applicationId: id, actorId, eventType: "APPLICATION_STATUS_CHANGED", metadata: { from: ApplicationStatus.ASSIGNED, to: ApplicationStatus.UNDER_REVIEW } } });
+    return serializeApplication(application);
+  });
+}
+
+export async function recordFundingDecision(id: string, decision: FundingDecisionStatus, actorId: string) {
+  const existing = await lifecycleApplication(id);
+  if (existing.status !== ApplicationStatus.UNDER_REVIEW) throw new HttpError(409, "Application must be under review before a funding decision.");
+  if (await prisma.fundingDecision.findUnique({ where: { applicationId: id } })) throw new HttpError(409, "A funding decision already exists for this application.");
+  try {
+    return await prisma.$transaction(async (tx) => {
+      const completed = await tx.review.count({ where: { applicationId: id, status: ReviewStatus.COMPLETED } });
+      if (completed < 3) throw new HttpError(409, "At least 3 completed reviews are required before a funding decision.");
+      const fundingDecision = await tx.fundingDecision.create({ data: { applicationId: id, decision, decidedById: actorId, decidedAt: new Date() }, include: { decidedBy: { select: { id: true, name: true } } } });
+      await tx.application.update({ where: { id }, data: { status: ApplicationStatus.DECIDED } });
+      await tx.auditEvent.create({ data: { applicationId: id, actorId, eventType: "APPLICATION_STATUS_CHANGED", metadata: { from: ApplicationStatus.UNDER_REVIEW, to: ApplicationStatus.DECIDED } } });
+      await tx.auditEvent.create({ data: { applicationId: id, actorId, eventType: "FUNDING_DECISION_RECORDED", metadata: { decision, fundingDecisionId: fundingDecision.id } } });
+      return fundingDecision;
+    });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") throw new HttpError(409, "A funding decision already exists for this application.");
+    throw error;
+  }
 }

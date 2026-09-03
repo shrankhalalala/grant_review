@@ -142,3 +142,45 @@ The second Phase 7 fix pass added direct mocked-Prisma regression coverage for r
 ## Phase 4 review corrections
 
 A read-only review found that malformed JSON parser errors were being mapped to `500`. The central handler now preserves safe 4xx parser statuses with a generic response. Explicit regression tests were added for a missing login email, a correctly signed expired JWT, and malformed JSON.
+
+## Complete Phase 8 application lifecycle and funding decisions
+
+### Prompt
+
+Implement only Phase 8 of the Grant Application Review System: add Program Officer lifecycle control
+for moving assigned applications into `UNDER_REVIEW`, add a dedicated funding-decision workflow that
+can finalize an application only from `UNDER_REVIEW` after at least three completed reviews, keep
+`DECIDED` unreachable through a generic status route, preserve transactional audit history, and avoid
+any Phase 9 or frontend work.
+
+### What you got
+
+The first Phase 8 prompt was too large and timed out without changing the code. The work was then
+split into multiple smaller execution passes while still remaining one Git phase. The implemented
+result adds `POST /applications/:id/status` for the explicit Program Officer `ASSIGNED` to
+`UNDER_REVIEW` transition, `POST /applications/:id/decision` for final `APPROVED` or `DECLINED`
+decisions, transactional lifecycle and decision audit events, enforcement that archived applications
+cannot be changed, protection against duplicate immutable funding decisions, and `fundingDecision`
+projection on application detail.
+
+### What you corrected
+
+Status-transition and funding-decision regression coverage were expanded to verify unauthorized
+access, invalid state changes, the dedicated-only path to `DECIDED`, exact `COMPLETED` review-count
+threshold behavior, draft exclusion from the threshold, actor and status override rejection, and
+malformed JSON handling. A stale Phase 7 application-detail fixture was then corrected after it
+caused misleading failures because the contract now expects `fundingDecision` instead of `decision`,
+with archived retrieval fixtures updated to include `fundingDecision: null` and `reviews: []`. A
+later read-through found that the funding-decision serializer was forwarding `decidedBy` too
+broadly, so application detail serialization was hardened to exclude `passwordHash`, and direct
+tests now assert safe decision and review projections.
+
+## Phase 8 concurrency review corrections
+
+A read-only Phase 8 review found two race conditions. The explicit Program Officer lifecycle
+transition now uses an authoritative conditional `ASSIGNED` and unarchived state update inside its
+transaction, so a competing request that affects zero rows returns a controlled conflict and writes
+no duplicate lifecycle audit. The funding-decision workflow preserves the database's one-decision
+constraint and translates only its `P2002` unique-constraint race into the same safe `409` duplicate
+decision response. Focused regressions cover both guarded status-transition and duplicate-decision
+race outcomes.

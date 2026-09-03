@@ -27,7 +27,7 @@ nullable `archivedAt`, `ownerId`, `fundingRoundId`, and creation/update timestam
 Program Officer and one funding round, and has assignments, reviews, conflicts, audit events, and at
 most one funding decision.
 
-`ownerId` is server-controlled when an application is created and identifies the owning Program Officer. The Phase 5 API accepts `requestedAmount` as an exact decimal string and persists it as `Decimal(12,2)`; responses serialize it as a decimal string. `archivedAt` is changed only by dedicated archive/restore actions, while the general update route cannot change archive state, owner, or lifecycle status. Lifecycle transitions remain a later dedicated workflow.
+`ownerId` is server-controlled when an application is created and identifies the owning Program Officer. The Phase 5 API accepts `requestedAmount` as an exact decimal string and persists it as `Decimal(12,2)`; responses serialize it as a decimal string. `archivedAt` is changed only by dedicated archive/restore actions, while the general update route cannot change archive state, owner, or lifecycle status. Phase 8 adds dedicated lifecycle workflows: Program Officers can explicitly move `ASSIGNED` applications to `UNDER_REVIEW`, and only the funding-decision workflow can move an application to `DECIDED`.
 
 ### ReviewerAssignment
 
@@ -46,8 +46,9 @@ This permits historical reassignment records while preventing two active rows fo
 
 `id` is a CUID primary key. It stores `applicationId`, `reviewerId`, unique `assignmentId`, status
 (`DRAFT` or `COMPLETED`), nullable integer scores for impact, feasibility, and budget justification,
-nullable comments, nullable `completedAt`, and timestamps. The `(applicationId, reviewerId)` pair is
-also unique, so a reviewer cannot have multiple reviews for an application.
+nullable comments, nullable `completedAt`, and timestamps. The persisted uniqueness rule is per
+assignment, not permanently per `(applicationId, reviewerId)`, so a historical soft-removed
+assignment can keep its review while a later reassignment receives its own review row.
 
 ### ConflictOfInterest
 
@@ -88,9 +89,9 @@ and uniqueness checks.
 ## Constraints And Indexes
 
 PostgreSQL enforces primary keys, foreign keys, unique user emails, unique funding-round names, one
-review per assignment, one review per application/reviewer pair, one decision per application, and
-the nullable active-key uniqueness rules. Required historical relationships use `Restrict` deletion;
-an audit actor may be deleted only by setting `actorId` to null, which preserves the event.
+review per assignment, one decision per application, and the nullable active-key uniqueness rules.
+Required historical relationships use `Restrict` deletion; an audit actor may be deleted only by
+setting `actorId` to null, which preserves the event.
 
 Indexes support expected server-side queries: application status, round, owner, submission/archive
 dates, organization, and contact email; reviewer assignment lookup, due/completion/removal state and
@@ -114,9 +115,11 @@ belong in later service logic rather than a static row constraint:
 
 - A reviewer may have at most five active assignments.
 - An unresolved conflict blocks assignment.
-- Application status transitions must be valid.
+- Application status transitions must be valid and role-restricted.
 - At least three completed reviews are required before an application becomes `DECIDED`.
+- Draft reviews do not count toward the funding-decision threshold.
 - Completed reviews are immutable.
+- Funding decisions are immutable and `DECIDED` is reachable only through the dedicated decision workflow.
 
 The database schema preserves enough history and indexes to enforce these rules atomically in future
 services.

@@ -158,6 +158,57 @@ Reviewers are identified only through JWT claims. Draft score fields are nullabl
 
 Review uniqueness is scoped to `assignmentId`, not permanently to the reviewer/application pair: Phase 6 soft removal allows historical reassignment, and each assignment requires its own review history.
 
+## Decision 14 — Dedicated Decision Workflow And Explicit Officer Review Start
+
+### Chose
+
+Keep two separate lifecycle paths: Program Officers may explicitly move `ASSIGNED` applications to
+`UNDER_REVIEW`, while `DECIDED` is reachable only through the dedicated funding-decision endpoint.
+
+### Why
+
+The assignment requires Program Officer control over the application lifecycle, but final funding
+decisions carry stricter rules than a generic status update. Separating the endpoints prevents a
+client from bypassing the completed-review threshold or decision-record creation, while remaining
+compatible with the existing automatic Phase 7 transition when the first reviewer draft is created.
+
+### Status
+
+Accepted.
+
+## Decision 15 — Decision Threshold Counts Completed Reviews Only
+
+### Chose
+
+Require at least three `COMPLETED` reviews before recording a funding decision, and exclude `DRAFT`
+reviews from that threshold.
+
+### Why
+
+Only completed reviews represent finalized reviewer input. Counting drafts would allow incomplete or
+mutable work to influence an irreversible decision.
+
+### Status
+
+Accepted.
+
+## Decision 16 — Funding Decision Projection Must Be Singular And Sanitized
+
+### Chose
+
+Return application-detail decisions through the singular `fundingDecision` field and explicitly
+serialize only safe decision-actor fields.
+
+### Why
+
+The relation is one-to-one in the schema, so the API contract should expose either one decision or
+`null`. A stale test fixture briefly masked that contract change, and a later serializer hardening
+confirmed that forwarding the raw related user object risked leaking `passwordHash`.
+
+### Status
+
+Accepted.
+
 ## Decision 10 — Bcryptjs And Stateless JWT Authentication
 
 ### Chose

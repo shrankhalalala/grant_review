@@ -51,11 +51,14 @@
 - Review completion
 - Review immutability
 
-## Phase 8 — Application Lifecycle
+## Phase 8 — Application Lifecycle (Complete)
 - Application status transitions
 - Server-side transition validation
+- Explicit Program Officer `ASSIGNED` to `UNDER_REVIEW` control
+- Compatibility with the automatic first-draft `UNDER_REVIEW` transition
 - Three-completed-review requirement
-- Funding decisions
+- Draft exclusion from the decision threshold
+- Dedicated funding decisions
 
 ## Phase 9 — Audit History and Alerts
 - Immutable application history
