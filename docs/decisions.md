@@ -42,3 +42,23 @@ begins, but they reflect the current intended direction.
   repository setup.
 - **Why:** The brief allows any stack, but Phase 1 is about structure and judgement. Capturing system
   boundaries first keeps the later stack decision tied to the real requirements rather than habit.
+
+## Decision 6 — Node.js + TypeScript + Express Backend
+
+### Chose
+
+Node.js with TypeScript and Express for the backend API.
+
+### Why
+
+The application requires a straightforward HTTP API with clear middleware, routing, testing, and
+server-side business-logic boundaries. TypeScript provides static typing as the domain becomes more
+complex, while Express keeps the HTTP layer explicit and lightweight.
+
+### Testing
+
+Vitest and Supertest are used for the backend testing foundation.
+
+### Status
+
+Accepted.

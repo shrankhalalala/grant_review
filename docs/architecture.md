@@ -1,7 +1,25 @@
 # Architecture
 
-This document captures the planned system shape during Phase 1. It describes intended boundaries and
-implementation direction, not completed functionality.
+This document captures the system shape and its current implementation boundaries. Phase 2 adds the
+backend foundation; database, authentication, and domain functionality remain planned work.
+
+## Phase 2 backend foundation
+
+The backend is a Node.js application written in TypeScript and served through Express.
+
+- `backend/src/app.ts` configures and exports the Express application. It registers JSON parsing,
+  CORS, routes, JSON 404 handling, and centralized error handling without opening a network port.
+- `backend/src/server.ts` imports the configured application and starts the HTTP server on the port
+  defined by `backend/src/config/env.ts`.
+- `backend/src/routes/` owns HTTP route registration. The current `GET /health` endpoint confirms
+  that the backend process is responsive without depending on a database.
+- `backend/src/middleware/` owns cross-cutting HTTP behavior, currently JSON 404 and error responses.
+- `backend/src/config/` centralizes environment loading and basic validation so application code does
+  not repeatedly read environment variables.
+
+Vitest and Supertest test the exported Express application directly. This keeps tests fast and avoids
+starting a separate HTTP server. As domain features are introduced, route definitions should remain
+thin and services will own the application business logic.
 
 ## Planned moving pieces
 
@@ -45,13 +63,11 @@ One representative user action will be reviewer assignment:
   auditable lifecycle events
 - Treat audit history as append-only domain data rather than derived UI metadata
 
-## Not being built in Phase 1
+## Not yet implemented
 
-- No framework scaffolding yet
-- No API endpoints yet
 - No database schema or migrations yet
 - No authentication implementation yet
+- No grant application, reviewer assignment, or review workflows yet
 - No deployment configuration yet
 
-Those concerns are intentionally deferred to later phases so the repository structure and project
-direction are established first.
+Those concerns remain intentionally deferred to later phases so the foundation can stay focused.
