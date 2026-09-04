@@ -215,3 +215,23 @@ ready-for-decision, and current-month requested-amount totals; status and fundin
 and eight weekly decision buckets. The endpoint reuses lifecycle, overdue, and Decimal semantics
 from earlier phases, returns stable zero-filled status and week series, needs no migration, and is
 covered by focused authorization and aggregation tests.
+
+## Phase 12A frontend foundation and authentication
+
+Created the Vite React TypeScript foundation with configurable production API configuration, centralized requests, persisted session restoration, role-aware routing, and separate Program Officer and Reviewer shells.
+
+## Phase 12B Program Officer application management
+
+Implemented Program Officer application discovery, filtering, pagination, detail, create/edit, archive/restore, lifecycle, and decision workflows with safe stale-request handling.
+
+## Phase 12C assignments and reviews
+
+Added Program Officer reviewer assignment management and Reviewer assignment, draft, review completion, and conflict UI. The safe `/reviewers` directory enabler supports reviewer selection; stale detail and mutation ownership protections and focused validation preserve current selection state.
+
+## Phase 12D dashboard, alerts, and reporting
+
+Implemented dashboard metrics, overdue alerts and badges, funding-round discovery, bulk assignment, and authenticated CSV export. Independent request ownership keeps reporting mutations and exports safe during round changes.
+
+## Phase 12E final frontend integration
+
+Completed route and navigation cleanup, session-loading polish, complete workflow review, production configuration checks, and final frontend validation.

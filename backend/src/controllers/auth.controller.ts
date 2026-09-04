@@ -1,7 +1,7 @@
 import type { RequestHandler } from "express";
 
 import { HttpError } from "../middleware/errorHandler.js";
-import { authenticate, findSafeUserById } from "../services/auth.service.js";
+import { authenticate, findSafeUserById, listReviewers } from "../services/auth.service.js";
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -64,4 +64,9 @@ export const currentUser: RequestHandler = async (request, response, next) => {
   } catch (error) {
     next(error);
   }
+};
+
+export const reviewers: RequestHandler = async (_request, response, next) => {
+  try { response.json({ reviewers: await listReviewers() }); }
+  catch (error) { next(error); }
 };

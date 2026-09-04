@@ -8,6 +8,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const prismaMock = vi.hoisted(() => ({
   user: {
     findUnique: vi.fn(),
+    findMany: vi.fn(),
   },
 }));
 
@@ -50,6 +51,8 @@ describe("authentication routes", () => {
   beforeEach(async () => {
     const passwordHash = await bcrypt.hash(password, 4);
     prismaMock.user.findUnique.mockReset();
+    prismaMock.user.findMany.mockReset();
+    prismaMock.user.findMany.mockResolvedValue([reviewer]);
     prismaMock.user.findUnique.mockImplementation(async ({ where }: { where: { email?: string; id?: string } }) => {
       if (where.email === officer.email || where.id === officer.id) {
         return { ...officer, passwordHash };
@@ -128,6 +131,16 @@ describe("authentication routes", () => {
     expect(response.status).toBe(200);
     expect(response.body).toEqual({ user: officer });
     expect(response.body).not.toHaveProperty("user.passwordHash");
+  });
+
+  it("lists only safe reviewer profiles for a Program Officer", async () => {
+    prismaMock.user.findMany.mockResolvedValue([reviewer]);
+    expect((await request(app).get("/reviewers")).status).toBe(401);
+    expect((await request(app).get("/reviewers").set("Authorization", `Bearer ${tokenFor(reviewer)}`)).status).toBe(403);
+    const response = await request(app).get("/reviewers").set("Authorization", `Bearer ${tokenFor(officer)}`);
+    expect(response).toEqual(expect.objectContaining({ status: 200, body: { reviewers: [reviewer] } }));
+    expect(response.body.reviewers[0]).not.toHaveProperty("passwordHash");
+    expect(prismaMock.user.findMany).toHaveBeenCalledWith({ where: { role: UserRole.REVIEWER }, select: { id: true, name: true, email: true, role: true }, orderBy: [{ name: "asc" }, { email: "asc" }] });
   });
 
   it("rejects missing, malformed, and invalid authorization headers", async () => {

@@ -1,0 +1,18 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { getDashboard } from "./dashboard";
+import { dismissOverdueAlert, getOverdueAlertCount, listOverdueAlerts } from "./alerts";
+import { listFundingRounds } from "./fundingRounds";
+import { bulkAssign, exportCsv } from "./reporting";
+import { downloadBlob } from "./api";
+
+let fetchMock: ReturnType<typeof vi.fn>;
+const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
+beforeEach(() => { fetchMock = vi.fn(); vi.stubGlobal("fetch", fetchMock); vi.stubGlobal("URL", { createObjectURL: vi.fn(() => "blob:test"), revokeObjectURL: vi.fn() }); });
+afterEach(() => vi.unstubAllGlobals());
+
+describe("Phase 12D API contracts", () => {
+  it("uses the dashboard and alert endpoints with bearer authentication", async () => { fetchMock.mockResolvedValueOnce(json({ dashboard: { openApplications: 1, overdueReviews: 0, readyForDecision: 0, amountRequestedThisMonth: "1000.00", applicationsByStatus: [], applicationsByFundingRound: [], applicationsDecidedByWeek: [] } })).mockResolvedValueOnce(json({ count: 2 })).mockResolvedValueOnce(json({ alerts: [] })); await getDashboard("token"); await getOverdueAlertCount("token"); await listOverdueAlerts("token"); expect(fetchMock.mock.calls.map(([url]) => url)).toEqual(expect.arrayContaining([expect.stringContaining("/dashboard"), expect.stringContaining("/alerts/overdue/count"), expect.stringContaining("/alerts/overdue")])); expect(new Headers(fetchMock.mock.calls[0][1].headers).get("Authorization")).toBe("Bearer token"); });
+  it("dismisses without a body and discovers rounds before bulk assignment", async () => { fetchMock.mockResolvedValueOnce(json({ alert: {} })).mockResolvedValueOnce(json({ fundingRounds: [{ id: "r", name: "Round", opensAt: "", closesAt: "" }] })).mockResolvedValueOnce(json({ results: [{ applicationId: "a", reviewerId: "u", success: false, reason: "Reviewer has reached the maximum of 5 active assignments." }] })); await dismissOverdueAlert("t", "alert-1"); await listFundingRounds("t"); await bulkAssign("t", "r", ["u"], "2026-01-01T00:00:00.000Z"); expect(fetchMock.mock.calls[0][0]).toContain("/alerts/overdue/alert-1/dismiss"); expect(fetchMock.mock.calls[0][1].body).toBeUndefined(); expect(fetchMock.mock.calls[2][0]).toContain("/funding-rounds/r/assignments/bulk"); expect(JSON.parse(fetchMock.mock.calls[2][1].body)).toEqual({ reviewerIds: ["u"], dueAt: "2026-01-01T00:00:00.000Z" }); });
+  it("downloads CSV blobs with supplied or fallback filenames", async () => { const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => undefined); fetchMock.mockResolvedValueOnce(new Response("header", { headers: { "Content-Disposition": "attachment; filename=round.csv" } })).mockResolvedValueOnce(new Response("header")); await exportCsv("token", "round-1"); await exportCsv("token", "round-2"); expect(fetchMock.mock.calls[0][0]).toContain("/funding-rounds/round-1/reviews/export.csv"); expect(new Headers(fetchMock.mock.calls[0][1].headers).get("Authorization")).toBe("Bearer token"); expect(click).toHaveBeenCalledTimes(2); expect(URL.createObjectURL).toHaveBeenCalledTimes(2); expect(URL.revokeObjectURL).toHaveBeenCalledTimes(2); click.mockRestore(); });
+  it("revokes the object URL when the browser click throws", () => { const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => { throw new Error("blocked"); }); expect(() => downloadBlob(new Blob(["header"]), "round.csv")).toThrow("blocked"); expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:test"); click.mockRestore(); });
+});

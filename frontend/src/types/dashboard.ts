@@ -1,0 +1,2 @@
+import type { ApplicationStatus } from "./application";
+export interface Dashboard { openApplications: number; overdueReviews: number; readyForDecision: number; amountRequestedThisMonth: string; applicationsByStatus: { status: ApplicationStatus; count: number }[]; applicationsByFundingRound: { fundingRound: { id: string; name: string }; count: number }[]; applicationsDecidedByWeek: { weekStart: string; count: number }[]; }

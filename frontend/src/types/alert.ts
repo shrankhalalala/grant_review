@@ -1,0 +1,1 @@
+export interface OverdueAlert { id: string; assignmentId: string; application: { id: string; organizationName: string }; reviewer: { id: string; name: string }; dueAtSnapshot: string; dismissedAt: string | null; triggeredAt: string; createdAt: string; }

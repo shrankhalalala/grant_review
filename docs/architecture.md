@@ -98,6 +98,16 @@ funding-decision data without a dashboard table. The response includes lifecycle
 existing active-incomplete overdue definition, a Decimal-formatted monthly requested total,
 funding-round counts, and eight Monday-start UTC decision-week buckets.
 
+## Phase 12A frontend foundation and authentication
+
+The Vite React frontend uses `VITE_API_BASE_URL` through a typed configuration module and keeps
+JSON request/error handling in one API client. Development may use a localhost fallback, while a
+production Vite build requires an explicit API URL. An `AuthProvider` persists a bearer token and
+safe user profile locally, restores authoritative identity through `GET /auth/me`, and clears invalid
+sessions. React Router guards Program Officer and Reviewer areas server-side-role-aware shells;
+feature routes are intentionally placeholders until later Phase 12 work. Vitest/jsdom route tests
+mock only the network boundary and cover auth restoration, guards, login, and logout.
+
 ## Planned moving pieces
 
 - A frontend application responsible for authentication flows, role-based screens, forms, tables,
@@ -142,8 +152,6 @@ One representative user action will be reviewer assignment:
 
 ## Not yet implemented
 
-- No audit-history retrieval or overdue-alert workflow routes yet
-- No dashboard endpoints yet
-- No frontend implementation or deployment configuration yet
+- No application, assignment, review, dashboard, alert, or report UI yet
 
 Those concerns remain intentionally deferred to later phases to keep each increment focused.

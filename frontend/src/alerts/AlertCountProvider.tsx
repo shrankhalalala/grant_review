@@ -1,0 +1,5 @@
+import { createContext, useContext, useEffect, useRef, useState, type PropsWithChildren } from "react";
+import { useAuth } from "../auth/AuthProvider"; import { getOverdueAlertCount } from "../services/alerts";
+const Context = createContext<{ count: number; refresh: () => Promise<void> } | null>(null);
+export function AlertCountProvider({ children }: PropsWithChildren) { const { token } = useAuth(); const [count, setCount] = useState(0); const sequence = useRef(0); const refresh = async () => { if (!token) return; const request = ++sequence.current; try { const next = await getOverdueAlertCount(token); if (request === sequence.current) setCount(next); } catch { if (request === sequence.current) setCount(0); } }; useEffect(() => { void refresh(); }, [token]); return <Context.Provider value={{ count, refresh }}>{children}</Context.Provider>; }
+export function useAlertCount() { const value = useContext(Context); if (!value) throw new Error("useAlertCount must be used within AlertCountProvider."); return value; }

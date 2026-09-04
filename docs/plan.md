@@ -82,7 +82,7 @@
 - Funding-round statistics
 - Decision trends
 
-## Phase 12 — Frontend
+## Phase 12 — Frontend (12A Complete)
 - Authentication UI
 - Program Officer interface
 - Reviewer interface
@@ -91,6 +91,12 @@
 - Review interface
 - Dashboard
 - Alerts
+
+### Phase 12A — Frontend Foundation And Authentication (Complete)
+- Vite React TypeScript foundation
+- Configurable API client
+- Persisted authentication and `/auth/me` restoration
+- Role-aware routing and shell placeholders
 
 ## Phase 13 — Testing and Validation
 - Unit tests

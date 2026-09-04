@@ -32,3 +32,7 @@ export async function findSafeUserById(id: string): Promise<SafeUser | null> {
 
   return user ? toSafeUser(user) : null;
 }
+
+export async function listReviewers(): Promise<SafeUser[]> {
+  return prisma.user.findMany({ where: { role: "REVIEWER" }, select: { id: true, name: true, email: true, role: true }, orderBy: [{ name: "asc" }, { email: "asc" }] });
+}

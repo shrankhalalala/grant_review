@@ -236,6 +236,14 @@ The overdue count uses the same active, unremoved, past-due, incomplete-assignme
 Phase 9. Requested totals remain Decimal strings, and decision trends return eight Monday-start UTC
 week buckets, including zero-count weeks, for a stable client contract.
 
+## Decision 20 — Frontend Auth Uses Context And Server-Restored Identity
+
+Phase 12A uses React Context for the small authentication state surface rather than adding a global
+state library. The browser persists only the bearer token and safe user profile, but treats
+`GET /auth/me` as the source of truth after reload; invalid tokens are cleared. Route guards use the
+restored role to keep Program Officer and Reviewer areas distinct while backend authorization remains
+authoritative.
+
 ## Decision 10 — Bcryptjs And Stateless JWT Authentication
 
 ### Chose

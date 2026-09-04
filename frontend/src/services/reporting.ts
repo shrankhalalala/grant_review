@@ -1,0 +1,3 @@
+import { apiBlobRequest, apiRequest, downloadBlob } from "./api"; import type { BulkAssignmentResult } from "../types/reporting";
+export async function bulkAssign(token: string, roundId: string, reviewerIds: string[], dueAt: string) { return (await apiRequest<{ results: BulkAssignmentResult[] }>(`/funding-rounds/${roundId}/assignments/bulk`, { method: "POST", token, body: { reviewerIds, dueAt } })).results; }
+export async function exportCsv(token: string, roundId: string) { const { blob, contentDisposition } = await apiBlobRequest(`/funding-rounds/${roundId}/reviews/export.csv`, { token }); const filename = contentDisposition?.match(/filename=\"?([^\";]+)/i)?.[1] ?? `completed-reviews-${roundId}.csv`; downloadBlob(blob, filename); }
