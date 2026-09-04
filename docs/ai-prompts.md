@@ -207,3 +207,11 @@ allowed on decided applications as informational notes.
 A read-only review found no production blocker, but direct overdue lifecycle and decided-comment
 coverage was incomplete and the schema documentation duplicated two sections. Focused regression
 tests were added and the `AuditEvent` and `OverdueAlert` documentation was consolidated.
+
+## Complete Phase 11 dashboard
+
+Implemented a Program Officer-only `GET /dashboard` API with open-application, overdue-review,
+ready-for-decision, and current-month requested-amount totals; status and funding-round breakdowns;
+and eight weekly decision buckets. The endpoint reuses lifecycle, overdue, and Decimal semantics
+from earlier phases, returns stable zero-filled status and week series, needs no migration, and is
+covered by focused authorization and aggregation tests.

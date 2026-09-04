@@ -90,6 +90,14 @@ every application/reviewer pair so conflicts, active-duplicate checks, capacity,
 remain authoritative. `GET /funding-rounds/:fundingRoundId/reviews/export.csv` returns only completed
 reviews with separate criterion columns and CSV-safe escaping.
 
+## Phase 11 dashboard
+
+`GET /dashboard` is a Program Officer-only read endpoint served by a dedicated route, controller,
+and service. It aggregates existing application, assignment, review, funding-round, and
+funding-decision data without a dashboard table. The response includes lifecycle counts, the
+existing active-incomplete overdue definition, a Decimal-formatted monthly requested total,
+funding-round counts, and eight Monday-start UTC decision-week buckets.
+
 ## Planned moving pieces
 
 - A frontend application responsible for authentication flows, role-based screens, forms, tables,

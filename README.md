@@ -1,7 +1,8 @@
 # Grant Application Review System
 
 This repository is being prepared for a take-home implementation of a Grant Application Review
-System. Phases 1 through 8 are complete: project setup, backend foundation, database setup, authentication/authorization, application CRUD, reviewer assignment, review workflow, and application lifecycle with funding decisions.
+System. Phases 1 through 11 are complete, including backend workflow, discovery, reporting, alerts,
+and dashboard support.
 
 ## Current status
 
@@ -86,6 +87,12 @@ Final decisions use the dedicated `POST /applications/:id/decision` route with `
 ## Timeline And Alerts API
 
 Program Officers can retrieve append-only application history at `GET /applications/:applicationId/timeline` and add immutable informational comments at `POST /applications/:applicationId/comments`. Comments are blocked for archived applications and remain allowed after a decision. `GET /alerts/overdue`, `GET /alerts/overdue/count`, and `POST /alerts/overdue/:alertId/dismiss` provide active overdue-review alerts, a navigation-badge count, and idempotent dismissal. Alerts are retained historically and each assignment due-date occurrence can create only one alert.
+
+## Dashboard API
+
+Program Officers can retrieve `GET /dashboard` for open-application, overdue-review, and
+ready-for-decision counts; the current month's exact requested total; application breakdowns by
+lifecycle status and funding round; and the last eight Monday-start UTC decision-week buckets.
 
 ## Documentation
 

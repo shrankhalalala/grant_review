@@ -75,7 +75,7 @@
 - Bulk reviewer assignment
 - CSV export
 
-## Phase 11 — Dashboard
+## Phase 11 — Dashboard (Complete)
 - Application statistics
 - Review statistics
 - Overdue statistics

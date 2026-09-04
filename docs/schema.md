@@ -141,3 +141,10 @@ At 100x scale, cross-application search and reporting joins over applications, a
 and audit history will become the first likely bottleneck. The selected indexes protect the planned
 filters; later work should add query measurement, cursor pagination, and reporting-specific indexes
 before introducing denormalized reporting tables.
+
+## Dashboard Aggregates
+
+Phase 11 uses the existing application status and submission-date indexes, assignment due/removal
+indexes, review status/application indexes, and funding-decision date index for read-only dashboard
+aggregates. No schema or migration was required; application history, including archived records,
+remains preserved by the existing model.

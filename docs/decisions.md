@@ -227,6 +227,15 @@ existing assignment service instead of using bulk inserts, preserving Phase 6 co
 duplicate, lifecycle, and audit invariants. CSV reporting exports completed reviews only and uses
 separate score columns for portable analysis.
 
+## Decision 19 — Live Dashboard Aggregates With UTC Week Buckets
+
+The dashboard calculates its read-only summary from existing tables at request time rather than
+maintaining a derived dashboard record. Open applications are non-`DECIDED` lifecycle records;
+ready-for-decision applications are `UNDER_REVIEW` records with at least three `COMPLETED` reviews.
+The overdue count uses the same active, unremoved, past-due, incomplete-assignment predicate as
+Phase 9. Requested totals remain Decimal strings, and decision trends return eight Monday-start UTC
+week buckets, including zero-count weeks, for a stable client contract.
+
 ## Decision 10 — Bcryptjs And Stateless JWT Authentication
 
 ### Chose
