@@ -109,6 +109,16 @@ describe("authentication and role routing", () => {
     expect(fetchMock.mock.calls[0][1]).toMatchObject({ method: "POST", body: JSON.stringify({ email: user.email, password: "password" }) });
   });
 
+  it("fills public seeded demo credentials without submitting the login form", async () => {
+    renderRoute("/login");
+    const email = await screen.findByLabelText("Email"); const password = screen.getByLabelText("Password");
+    expect(screen.getByRole("button", { name: /^Program Officer/ })).toBeInTheDocument(); expect(screen.getByRole("button", { name: /^Reviewer/ })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /^Program Officer/ }));
+    expect(email).toHaveValue("maya.officer@example.test"); expect(password).toHaveValue("Demo123!"); expect(fetchMock).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: /^Reviewer/ }));
+    expect(email).toHaveValue("ava.reviewer@example.test"); expect(password).toHaveValue("Demo123!"); expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("clears the session and returns to login on logout", async () => {
     restore(officer);
     renderRoute("/program/dashboard");

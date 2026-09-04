@@ -239,3 +239,7 @@ Completed route and navigation cleanup, session-loading polish, complete workflo
 ## Phase 13 acceptance corrections
 
 The final assignment audit found that completed-review details and the existing immutable timeline/comment API were not exposed in Program Officer application detail. Added those focused UI surfaces, request-freshness protection, and rendered regressions; no backend contract, schema, or migration changed. Final validation: 78 frontend tests and frontend/backend builds pass; backend HTTP tests remain sandbox-blocked by Supertest `listen EPERM`; `git diff --check` passes.
+
+## Phase 14 UI polish
+
+Replaced the green/cream/orange identity with a navy cool-neutral theme, moved the login theme control to the top-right, and added evaluator-friendly seeded demo account selectors. Light/dark mode and the collapsible sidebar remain intact. Validation: frontend tests and the production build pass.
