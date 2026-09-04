@@ -63,3 +63,13 @@ export interface ApplicationListResponse {
   page: number;
   pageSize: number;
 }
+
+export interface TimelineEvent {
+  id: string;
+  applicationId: string;
+  actorId: string | null;
+  eventType: string;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+  actor: { id: string; name: string } | null;
+}

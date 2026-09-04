@@ -235,3 +235,7 @@ Implemented dashboard metrics, overdue alerts and badges, funding-round discover
 ## Phase 12E final frontend integration
 
 Completed route and navigation cleanup, session-loading polish, complete workflow review, production configuration checks, and final frontend validation.
+
+## Phase 13 acceptance corrections
+
+The final assignment audit found that completed-review details and the existing immutable timeline/comment API were not exposed in Program Officer application detail. Added those focused UI surfaces, request-freshness protection, and rendered regressions; no backend contract, schema, or migration changed. Final validation: 78 frontend tests and frontend/backend builds pass; backend HTTP tests remain sandbox-blocked by Supertest `listen EPERM`; `git diff --check` passes.

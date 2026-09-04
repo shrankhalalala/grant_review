@@ -1,9 +1,10 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AuthProvider } from "../auth/AuthProvider";
 import { dateTimeInputFromIso, ProgramApplicationsPage } from "./ProgramApplicationsPage";
 import type { User } from "../types/auth";
+import type { TimelineEvent } from "../types/application";
 
 const tokenKey = "grant-review.auth-token";
 let fetchMock: ReturnType<typeof vi.fn>;
@@ -529,5 +530,130 @@ describe("Program Officer assignment management", () => {
     await waitFor(() => expect(screen.getByRole("heading", { name: "Beacon Labs" })).toBeInTheDocument());
     expect(screen.getByText("Ben Brooks")).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Stale Example Foundation" })).not.toBeInTheDocument();
+  });
+
+  it("renders completed review details and an immutable timeline with Program Officer comments", async () => {
+    const reviewed = { ...baseApplication, reviews: [{ id: "review-1", impactScore: 5, feasibilityScore: 4, budgetJustificationScore: 3, comments: "Strong proposal", completedAt: "2026-09-05T00:00:00.000Z", reviewer: { id: reviewerA.id, name: reviewerA.name } }] };
+    let events: TimelineEvent[] = [{ id: "event-1", applicationId: reviewed.id, actorId: officer.id, eventType: "APPLICATION_STATUS_CHANGED", metadata: { from: "SUBMITTED", to: "ASSIGNED" }, createdAt: "2026-09-04T00:00:00.000Z", actor: { id: officer.id, name: officer.name } }];
+    restore((url, options) => {
+      if (url.endsWith("/auth/me")) return Promise.resolve(jsonResponse({ user: officer }));
+      if (url.includes("/applications?")) return Promise.resolve(jsonResponse({ applications: [reviewed], total: 1, page: 1, pageSize: 20 }));
+      if (url.endsWith("/applications/application-1")) return Promise.resolve(jsonResponse({ application: reviewed }));
+      if (url.endsWith("/applications/application-1/assignments")) return Promise.resolve(jsonResponse({ assignments: [] }));
+      if (url.endsWith("/reviewers")) return Promise.resolve(jsonResponse({ reviewers: [] }));
+      if (url.endsWith("/applications/application-1/timeline")) return Promise.resolve(jsonResponse({ events }));
+      if (url.endsWith("/applications/application-1/comments") && options?.method === "POST") { events = [...events, { id: "event-2", applicationId: reviewed.id, actorId: officer.id, eventType: "APPLICATION_COMMENT_ADDED", metadata: { comment: "Follow up" }, createdAt: "2026-09-06T00:00:00.000Z", actor: { id: officer.id, name: officer.name } }]; return Promise.resolve(jsonResponse({ event: events[1] }, 201)); }
+      return Promise.reject(new Error(`Unexpected request: ${url}`));
+    });
+    renderPage(); await openApplication("Example Foundation");
+    expect(await screen.findByText("Ava Adams")).toBeInTheDocument(); expect(screen.getByText("Strong proposal")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "View timeline" })); expect(await screen.findByText("APPLICATION STATUS CHANGED")).toBeInTheDocument();
+    fireEvent.change(screen.getByRole("textbox", { name: "Add comment" }), { target: { value: "Follow up" } }); fireEvent.click(screen.getByRole("button", { name: "Add comment" }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("http://localhost:4000/applications/application-1/comments", expect.objectContaining({ method: "POST", body: JSON.stringify({ comment: "Follow up" }) })));
+    expect(await screen.findByText("Follow up")).toBeInTheDocument(); expect(screen.queryByRole("button", { name: /edit timeline/i })).not.toBeInTheDocument();
+  });
+
+  it("shows a pending timeline load, then renders its resolved history", async () => {
+    const timeline = deferredResponse();
+    restore((url) => {
+      if (url.endsWith("/auth/me")) return Promise.resolve(jsonResponse({ user: officer }));
+      if (url.includes("/applications?")) return Promise.resolve(jsonResponse({ applications: [baseApplication], total: 1, page: 1, pageSize: 20 }));
+      if (url.endsWith("/applications/application-1")) return Promise.resolve(jsonResponse({ application: baseApplication }));
+      if (url.endsWith("/applications/application-1/assignments")) return Promise.resolve(jsonResponse({ assignments: [] }));
+      if (url.endsWith("/reviewers")) return Promise.resolve(jsonResponse({ reviewers: [] }));
+      if (url.endsWith("/applications/application-1/timeline")) return timeline.promise;
+      return Promise.reject(new Error(`Unexpected request: ${url}`));
+    });
+    renderPage(); await openApplication("Example Foundation"); await screen.findByRole("heading", { name: "Example Foundation" }); fireEvent.click(screen.getByRole("button", { name: "View timeline" }));
+    expect(await screen.findByText("Loading timeline...")).toBeInTheDocument();
+    timeline.resolve(jsonResponse({ events: [{ id: "event-1", applicationId: baseApplication.id, actorId: officer.id, eventType: "APPLICATION_CREATED", metadata: null, createdAt: "2026-09-04T00:00:00.000Z", actor: { id: officer.id, name: officer.name } satisfies TimelineEvent["actor"] }] }));
+    expect(await screen.findByText("APPLICATION CREATED")).toBeInTheDocument(); expect(screen.queryByText("Loading timeline...")).not.toBeInTheDocument();
+  });
+
+  it("renders a timeline error without crashing the application detail", async () => {
+    restore((url) => {
+      if (url.endsWith("/auth/me")) return Promise.resolve(jsonResponse({ user: officer }));
+      if (url.includes("/applications?")) return Promise.resolve(jsonResponse({ applications: [baseApplication], total: 1, page: 1, pageSize: 20 }));
+      if (url.endsWith("/applications/application-1")) return Promise.resolve(jsonResponse({ application: baseApplication }));
+      if (url.endsWith("/applications/application-1/assignments")) return Promise.resolve(jsonResponse({ assignments: [] }));
+      if (url.endsWith("/reviewers")) return Promise.resolve(jsonResponse({ reviewers: [] }));
+      if (url.endsWith("/applications/application-1/timeline")) return Promise.resolve(jsonResponse({ message: "Timeline unavailable" }, 500));
+      return Promise.reject(new Error(`Unexpected request: ${url}`));
+    });
+    renderPage(); await openApplication("Example Foundation"); await screen.findByRole("heading", { name: "Example Foundation" }); fireEvent.click(screen.getByRole("button", { name: "View timeline" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Timeline unavailable"); expect(screen.getByRole("heading", { name: "Example Foundation" })).toBeInTheDocument();
+  });
+
+  it("renders a successful empty timeline as empty history", async () => {
+    restore((url) => {
+      if (url.endsWith("/auth/me")) return Promise.resolve(jsonResponse({ user: officer }));
+      if (url.includes("/applications?")) return Promise.resolve(jsonResponse({ applications: [baseApplication], total: 1, page: 1, pageSize: 20 }));
+      if (url.endsWith("/applications/application-1")) return Promise.resolve(jsonResponse({ application: baseApplication }));
+      if (url.endsWith("/applications/application-1/assignments")) return Promise.resolve(jsonResponse({ assignments: [] }));
+      if (url.endsWith("/reviewers")) return Promise.resolve(jsonResponse({ reviewers: [] }));
+      if (url.endsWith("/applications/application-1/timeline")) return Promise.resolve(jsonResponse({ events: [] }));
+      return Promise.reject(new Error(`Unexpected request: ${url}`));
+    });
+    renderPage(); await openApplication("Example Foundation"); await screen.findByRole("heading", { name: "Example Foundation" }); fireEvent.click(screen.getByRole("button", { name: "View timeline" }));
+    expect(await screen.findByText("No timeline entries yet.")).toBeInTheDocument(); expect(screen.queryByText("Loading timeline...")).not.toBeInTheDocument(); expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("disables comment submission while its request is pending and prevents duplicates", async () => {
+    const commentRequest = deferredResponse(); let commentPosts = 0;
+    restore((url, options) => {
+      if (url.endsWith("/auth/me")) return Promise.resolve(jsonResponse({ user: officer }));
+      if (url.includes("/applications?")) return Promise.resolve(jsonResponse({ applications: [baseApplication], total: 1, page: 1, pageSize: 20 }));
+      if (url.endsWith("/applications/application-1")) return Promise.resolve(jsonResponse({ application: baseApplication }));
+      if (url.endsWith("/applications/application-1/assignments")) return Promise.resolve(jsonResponse({ assignments: [] }));
+      if (url.endsWith("/reviewers")) return Promise.resolve(jsonResponse({ reviewers: [] }));
+      if (url.endsWith("/applications/application-1/timeline")) return Promise.resolve(jsonResponse({ events: [] }));
+      if (url.endsWith("/applications/application-1/comments") && options?.method === "POST") { commentPosts += 1; return commentRequest.promise; }
+      return Promise.reject(new Error(`Unexpected request: ${url}`));
+    });
+    renderPage(); await openApplication("Example Foundation"); await screen.findByRole("heading", { name: "Example Foundation" }); fireEvent.click(screen.getByRole("button", { name: "View timeline" })); await screen.findByText("No timeline entries yet.");
+    fireEvent.change(screen.getByRole("textbox", { name: "Add comment" }), { target: { value: "Follow up" } }); fireEvent.click(screen.getByRole("button", { name: "Add comment" }));
+    const pending = await screen.findByRole("button", { name: "Adding comment..." }); expect(pending).toBeDisabled(); fireEvent.click(pending); expect(commentPosts).toBe(1);
+    commentRequest.resolve(jsonResponse({ event: {} }, 201)); await waitFor(() => expect(screen.getByRole("button", { name: "Add comment" })).toBeEnabled()); expect(commentPosts).toBe(1);
+  });
+
+  it("keeps the post-comment timeline when an older same-application request resolves late", async () => {
+    const olderTimeline = deferredResponse(); const refreshedTimeline = deferredResponse(); let timelineRequests = 0;
+    const freshEvents: TimelineEvent[] = [{ id: "comment-1", applicationId: baseApplication.id, actorId: officer.id, eventType: "APPLICATION_COMMENT_ADDED", metadata: { comment: "Fresh comment" }, createdAt: "2026-09-06T00:00:00.000Z", actor: { id: officer.id, name: officer.name } }];
+    restore((url, options) => {
+      if (url.endsWith("/auth/me")) return Promise.resolve(jsonResponse({ user: officer }));
+      if (url.includes("/applications?")) return Promise.resolve(jsonResponse({ applications: [baseApplication], total: 1, page: 1, pageSize: 20 }));
+      if (url.endsWith("/applications/application-1")) return Promise.resolve(jsonResponse({ application: baseApplication }));
+      if (url.endsWith("/applications/application-1/assignments")) return Promise.resolve(jsonResponse({ assignments: [] }));
+      if (url.endsWith("/reviewers")) return Promise.resolve(jsonResponse({ reviewers: [] }));
+      if (url.endsWith("/applications/application-1/timeline")) return ++timelineRequests === 1 ? olderTimeline.promise : refreshedTimeline.promise;
+      if (url.endsWith("/applications/application-1/comments") && options?.method === "POST") return Promise.resolve(jsonResponse({ event: freshEvents[0] }, 201));
+      return Promise.reject(new Error(`Unexpected request: ${url}`));
+    });
+    renderPage(); await openApplication("Example Foundation"); await screen.findByRole("heading", { name: "Example Foundation" }); fireEvent.click(screen.getByRole("button", { name: "View timeline" })); await screen.findByText("Loading timeline...");
+    fireEvent.change(screen.getByRole("textbox", { name: "Add comment" }), { target: { value: "Fresh comment" } }); fireEvent.click(screen.getByRole("button", { name: "Add comment" }));
+    await waitFor(() => expect(timelineRequests).toBe(2)); refreshedTimeline.resolve(jsonResponse({ events: freshEvents })); expect(await screen.findByText("Fresh comment")).toBeInTheDocument();
+    await act(async () => { olderTimeline.resolve(jsonResponse({ events: [] })); await olderTimeline.promise; });
+    expect(screen.getByText("Fresh comment")).toBeInTheDocument(); expect(screen.queryByText("No timeline entries yet.")).not.toBeInTheDocument();
+  });
+
+  it("keeps B's timeline when A's deferred timeline response settles after switching applications", async () => {
+    const timelineA = deferredResponse(); const timelineB = deferredResponse();
+    const bEvents: TimelineEvent[] = [{ id: "event-b", applicationId: secondApplication.id, actorId: officer.id, eventType: "APPLICATION_CREATED", metadata: null, createdAt: "2026-09-06T00:00:00.000Z", actor: { id: officer.id, name: officer.name } }];
+    restore((url) => {
+      if (url.endsWith("/auth/me")) return Promise.resolve(jsonResponse({ user: officer }));
+      if (url.includes("/applications?")) return Promise.resolve(jsonResponse({ applications: [baseApplication, secondApplication], total: 2, page: 1, pageSize: 20 }));
+      if (url.endsWith("/applications/application-1")) return Promise.resolve(jsonResponse({ application: baseApplication }));
+      if (url.endsWith("/applications/application-2")) return Promise.resolve(jsonResponse({ application: secondApplication }));
+      if (url.endsWith("/applications/application-1/assignments") || url.endsWith("/applications/application-2/assignments")) return Promise.resolve(jsonResponse({ assignments: [] }));
+      if (url.endsWith("/reviewers")) return Promise.resolve(jsonResponse({ reviewers: [] }));
+      if (url.endsWith("/applications/application-1/timeline")) return timelineA.promise;
+      if (url.endsWith("/applications/application-2/timeline")) return timelineB.promise;
+      return Promise.reject(new Error(`Unexpected request: ${url}`));
+    });
+    renderPage(); await openApplication("Example Foundation"); await screen.findByRole("heading", { name: "Example Foundation" }); fireEvent.click(screen.getByRole("button", { name: "View timeline" })); await screen.findByText("Loading timeline...");
+    await openApplication("Beacon Labs"); await screen.findByRole("heading", { name: "Beacon Labs" }); fireEvent.click(screen.getByRole("button", { name: "View timeline" }));
+    await act(async () => { timelineB.resolve(jsonResponse({ events: bEvents })); await timelineB.promise; }); expect(await screen.findByText("APPLICATION CREATED")).toBeInTheDocument();
+    await act(async () => { timelineA.resolve(jsonResponse({ events: [{ id: "event-a", applicationId: baseApplication.id, actorId: officer.id, eventType: "APPLICATION_COMMENT_ADDED", metadata: { comment: "Stale A" }, createdAt: "2026-09-05T00:00:00.000Z", actor: { id: officer.id, name: officer.name } }] })); await timelineA.promise; });
+    expect(screen.getByRole("heading", { name: "Beacon Labs" })).toBeInTheDocument(); expect(screen.getByText("APPLICATION CREATED")).toBeInTheDocument(); expect(screen.queryByText("Stale A")).not.toBeInTheDocument();
   });
 });

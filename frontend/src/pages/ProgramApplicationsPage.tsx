@@ -3,8 +3,9 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { ApiError } from "../services/api";
 import { beginReview, createApplication, getApplication, listApplications, recordDecision, setArchiveState, updateApplication } from "../services/applications";
 import { createAssignment, listApplicationAssignments, listReviewers, removeAssignment, updateAssignmentDueAt, type ReviewerOption } from "../services/assignments";
+import { addTimelineComment, listTimeline } from "../services/timeline";
 import { useAuth } from "../auth/AuthProvider";
-import type { Application, ApplicationDiscovery, ApplicationInput, ApplicationStatus, FundingDecisionStatus } from "../types/application";
+import type { Application, ApplicationDiscovery, ApplicationInput, ApplicationStatus, FundingDecisionStatus, TimelineEvent } from "../types/application";
 import type { ReviewerAssignment } from "../types/assignment";
 
 const initialFilters: ApplicationDiscovery = { sortBy: "submittedAt", sortDirection: "desc", page: 1, pageSize: 20 };
@@ -132,7 +133,61 @@ function ApplicationDetail({ application, editing, setEditing, formValue, action
   const completedReviews = application.reviews.length;
   const canDecide = !application.archivedAt && application.status === "UNDER_REVIEW" && completedReviews >= 3;
   const busy = pendingAction !== null;
-  return <><div className="detail-heading"><div><p className="eyebrow">Application detail</p><h2>{application.organizationName}</h2></div><span className={`status-pill status-${application.status.toLowerCase()}`}>{readableStatus(application.status)}</span></div>{application.archivedAt && <p className="archive-notice">Archived {new Date(application.archivedAt).toLocaleDateString()}. Restore it before lifecycle actions.</p>}<dl className="application-details"><dt>Contact</dt><dd>{application.contactEmail}</dd><dt>Funding round</dt><dd>{application.fundingRound.name} <small>({application.fundingRoundId})</small></dd><dt>Requested amount</dt><dd>{application.requestedAmount}</dd><dt>Submitted</dt><dd>{new Date(application.submittedAt).toLocaleString()}</dd><dt>Owner</dt><dd>{application.owner.name}</dd>{application.fundingDecision && <><dt>Decision</dt><dd>{application.fundingDecision.decision} by {application.fundingDecision.decidedBy.name}</dd></>}</dl>{actionError && <p className="form-error" role="alert">{actionError}</p>}<div className="detail-actions"><button className="secondary-button" disabled={busy} onClick={() => setEditing(true)}>Edit</button><button className="secondary-button" disabled={busy} onClick={onArchive}>{pendingAction === "archive" ? "Archiving..." : pendingAction === "restore" ? "Restoring..." : application.archivedAt ? "Restore" : "Archive"}</button>{canBegin && <button className="primary-button" disabled={busy} onClick={onBeginReview}>{pendingAction === "status" ? "Starting review..." : "Begin review"}</button>}{canDecide && <><button className="primary-button" disabled={busy} onClick={() => onDecision("APPROVED")}>{pendingAction === "decision" ? "Recording decision..." : "Approve funding"}</button><button className="danger-button" disabled={busy} onClick={() => onDecision("DECLINED")}>Decline funding</button></>}</div>{!application.archivedAt && application.status === "SUBMITTED" && <p className="lifecycle-note">Assign reviewers before review can begin.</p>}{!application.archivedAt && application.status === "UNDER_REVIEW" && completedReviews < 3 && <p className="lifecycle-note">Decision available after 3 completed reviews ({completedReviews}/3).</p>}{!application.archivedAt && application.status === "DECIDED" && <p className="lifecycle-note">This application has a recorded funding decision.</p>}<AssignmentManager key={application.id} application={application} onChanged={onAssignmentChange} /></>;
+  return <><div className="detail-heading"><div><p className="eyebrow">Application detail</p><h2>{application.organizationName}</h2></div><span className={`status-pill status-${application.status.toLowerCase()}`}>{readableStatus(application.status)}</span></div>{application.archivedAt && <p className="archive-notice">Archived {new Date(application.archivedAt).toLocaleDateString()}. Restore it before lifecycle actions.</p>}<dl className="application-details"><dt>Contact</dt><dd>{application.contactEmail}</dd><dt>Funding round</dt><dd>{application.fundingRound.name} <small>({application.fundingRoundId})</small></dd><dt>Requested amount</dt><dd>{application.requestedAmount}</dd><dt>Submitted</dt><dd>{new Date(application.submittedAt).toLocaleString()}</dd><dt>Owner</dt><dd>{application.owner.name}</dd>{application.fundingDecision && <><dt>Decision</dt><dd>{application.fundingDecision.decision} by {application.fundingDecision.decidedBy.name}</dd></>}</dl>{actionError && <p className="form-error" role="alert">{actionError}</p>}<div className="detail-actions"><button className="secondary-button" disabled={busy} onClick={() => setEditing(true)}>Edit</button><button className="secondary-button" disabled={busy} onClick={onArchive}>{pendingAction === "archive" ? "Archiving..." : pendingAction === "restore" ? "Restoring..." : application.archivedAt ? "Restore" : "Archive"}</button>{canBegin && <button className="primary-button" disabled={busy} onClick={onBeginReview}>{pendingAction === "status" ? "Starting review..." : "Begin review"}</button>}{canDecide && <><button className="primary-button" disabled={busy} onClick={() => onDecision("APPROVED")}>{pendingAction === "decision" ? "Recording decision..." : "Approve funding"}</button><button className="danger-button" disabled={busy} onClick={() => onDecision("DECLINED")}>Decline funding</button></>}</div>{!application.archivedAt && application.status === "SUBMITTED" && <p className="lifecycle-note">Assign reviewers before review can begin.</p>}{!application.archivedAt && application.status === "UNDER_REVIEW" && completedReviews < 3 && <p className="lifecycle-note">Decision available after 3 completed reviews ({completedReviews}/3).</p>}{!application.archivedAt && application.status === "DECIDED" && <p className="lifecycle-note">This application has a recorded funding decision.</p>}<CompletedReviews reviews={application.reviews} /><ApplicationTimeline key={application.id} application={application} /><AssignmentManager key={application.id} application={application} onChanged={onAssignmentChange} /></>;
+}
+
+function CompletedReviews({ reviews }: { reviews: Application["reviews"] }) { return <section className="assignment-manager"><div className="section-heading"><h3>Completed reviews</h3><span>{reviews.length} total</span></div>{reviews.length === 0 ? <p className="lifecycle-note">No completed reviews yet.</p> : <div className="assignment-list">{reviews.map((review) => <article className="assignment-row" key={review.id}><strong>{review.reviewer.name}</strong><span>Completed {review.completedAt && new Date(review.completedAt).toLocaleString()}</span><ReviewScores review={review} /></article>)}</div>}</section>; }
+function ReviewScores({ review }: { review: Application["reviews"][number] }) { return <dl className="application-details"><dt>Impact</dt><dd>{review.impactScore}</dd><dt>Feasibility</dt><dd>{review.feasibilityScore}</dd><dt>Budget justification</dt><dd>{review.budgetJustificationScore}</dd><dt>Comments</dt><dd>{review.comments || "No comments provided."}</dd></dl>; }
+function ApplicationTimeline({ application }: { application: Application }) {
+  const { token } = useAuth();
+  const [open, setOpen] = useState(false);
+  const [events, setEvents] = useState<TimelineEvent[] | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [comment, setComment] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+  const request = useRef(0);
+  const currentApplicationId = useRef(application.id);
+  const mounted = useRef(true);
+  const commentInFlight = useRef(false);
+  const isCurrent = () => mounted.current && currentApplicationId.current === application.id;
+  const load = async () => {
+    if (!token) return;
+    const sequence = ++request.current;
+    if (isCurrent()) { setLoading(true); setError(null); }
+    try {
+      const next = await listTimeline(token, application.id);
+      if (sequence === request.current && isCurrent()) setEvents(next);
+    } catch (cause) {
+      if (sequence === request.current && isCurrent()) setError(message(cause));
+    } finally {
+      if (sequence === request.current && isCurrent()) setLoading(false);
+    }
+  };
+  useEffect(() => {
+    mounted.current = true;
+    currentApplicationId.current = application.id;
+    return () => { mounted.current = false; };
+  }, [application.id]);
+  useEffect(() => { if (open) void load(); }, [open, token]);
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!token || !comment.trim() || application.archivedAt || commentInFlight.current) return;
+    commentInFlight.current = true;
+    if (isCurrent()) { setPending(true); setError(null); }
+    try {
+      await addTimelineComment(token, application.id, comment.trim());
+      if (!isCurrent()) return;
+      setComment("");
+      await load();
+    } catch (cause) {
+      if (isCurrent()) setError(message(cause));
+    } finally {
+      commentInFlight.current = false;
+      if (isCurrent()) setPending(false);
+    }
+  };
+  return <section className="assignment-manager"><div className="section-heading"><h3>Application timeline</h3><button className="secondary-button" type="button" onClick={() => setOpen((value) => !value)}>{open ? "Hide timeline" : "View timeline"}</button></div>{open && <>{loading && <p className="state-message">Loading timeline...</p>}{error && <p className="form-error" role="alert">{error}</p>}{!loading && events?.length === 0 && <p className="lifecycle-note">No timeline entries yet.</p>}{events?.map((entry) => <article className="assignment-row" key={entry.id}><strong>{entry.eventType.replaceAll("_", " ")}</strong><span>{entry.actor?.name ?? "System"} · {new Date(entry.createdAt).toLocaleString()}</span>{entry.eventType === "APPLICATION_COMMENT_ADDED" && typeof entry.metadata?.comment === "string" && <p>{entry.metadata.comment}</p>}</article>)}{!application.archivedAt && <form className="conflict-form" onSubmit={submit}><label>Add comment<textarea value={comment} onChange={(event) => setComment(event.target.value)} required /></label><button className="primary-button" disabled={pending}>{pending ? "Adding comment..." : "Add comment"}</button></form>}</>}</section>;
 }
 
 function AssignmentManager({ application, onChanged }: { application: Application; onChanged: (id: string) => Promise<void> }) {
