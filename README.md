@@ -1,108 +1,126 @@
 # Grant Application Review System
 
-This repository is being prepared for a take-home implementation of a Grant Application Review
-System. Phases 1 through 11 are complete, including backend workflow, discovery, reporting, alerts,
-and dashboard support.
+A full-stack take-home application for managing grant applications from submission through reviewer assignment, scoring, funding decisions, and audit history.
 
-## Current status
+## Live Demo
 
-The repository now includes a TypeScript, Node.js, and Express backend with centralized JSON error
-handling, a Vitest/Supertest testing foundation, Prisma ORM, and a Supabase-hosted PostgreSQL
-database. It implements stateless JWT bearer authentication plus protected workflows for Program
-Officer application management, reviewer assignment, reviewer draft and completed reviews, explicit
-application lifecycle movement into `UNDER_REVIEW`, and final funding decisions once review
-requirements are met. Amounts use exact decimal strings, archived records stay retrievable, and
-workflow mutations record immutable audit events.
+- Application: [grantreview-kohl.vercel.app](https://grantreview-kohl.vercel.app)
+- API: [grant-review.onrender.com](https://grant-review.onrender.com)
+- API health: [grant-review.onrender.com/health](https://grant-review.onrender.com/health)
 
-## Repository structure
+The Render service can take a short time to wake after inactivity. Vercel is configured for React Router direct-route refreshes.
+
+| Role | Email | Password |
+| --- | --- | --- |
+| Program Officer | `maya.officer@example.test` | `Demo123!` |
+| Reviewer | `ava.reviewer@example.test` | `Demo123!` |
+
+The login page's evaluator selectors fill these public development credentials but retain the normal authentication flow.
+
+## Capabilities
+
+- Program Officer application creation, discovery, filters, sorting, pagination, archiving, restoration, and detail workflows.
+- Reviewer assignment, due-date management, five-active-assignment capacity protection, conflict checks, and bulk assignment.
+- Reviewer-owned draft and completed scored reviews, plus conflict declarations.
+- Dedicated funding decisions after three completed reviews; append-only timeline events and comments.
+- Overdue alerts, dashboard metrics, funding-round reporting, and safe completed-review CSV export.
+- Server-enforced roles, responsive navigation, persistent light/dark theme, and stale-response protections.
+
+## Architecture
 
 ```text
-.
-├── backend/
-│   ├── src/
-│   │   ├── app.ts
-│   │   ├── server.ts
-│   │   ├── config/
-│   │   ├── controllers/
-│   │   ├── middleware/
-│   │   ├── routes/
-│   │   ├── services/
-│   │   └── utils/
-│   ├── tests/
-│   ├── .env.example
-│   ├── package.json
-│   ├── prisma/
-│   ├── prisma.config.ts
-│   ├── tsconfig.json
-│   └── vitest.config.ts
-├── frontend/
-│   └── src/
-│       ├── components/
-│       ├── hooks/
-│       ├── layouts/
-│       ├── pages/
-│       ├── services/
-│       ├── types/
-│       └── utils/
-├── docs/
-│   ├── ai-prompts.md
-│   ├── architecture.md
-│   ├── decisions.md
-│   ├── plan.md
-│   └── schema.md
-├── .gitignore
-├── README.md
-└── SUBMISSION.md
+React/Vite browser -> Vercel SPA -> Render Express API -> Prisma -> Supabase PostgreSQL
 ```
 
-## Current foundation
+The browser sends JSON with bearer JWTs. Express owns validation, authorization, domain transitions, and audit writes. Prisma uses `DATABASE_URL` at runtime; Prisma CLI uses `DIRECT_URL` for migrations and seeding. See [architecture details](docs/architecture.md) and the [schema reference](docs/schema.md).
 
-- A clean root-level frontend/backend split
-- A TypeScript and Express backend with a testable application/server boundary
-- Centralized environment configuration, JSON error handling, and a health endpoint
-- Implemented database, authentication, application, assignment, review, and decision workflows
+## Tech Stack
 
-## Development demo login
+| Layer | Technology |
+| --- | --- |
+| Frontend | [React](https://react.dev/), [TypeScript](https://www.typescriptlang.org/), [Vite](https://vite.dev/), [React Router](https://reactrouter.com/) |
+| Backend | [Node.js](https://nodejs.org/), [Express](https://expressjs.com/), TypeScript |
+| Data | [Prisma](https://www.prisma.io/) with [PostgreSQL](https://www.postgresql.org/) |
+| Security | [bcryptjs](https://github.com/dcodeIO/bcrypt.js) and [JWT](https://jwt.io/) |
+| Testing | [Vitest](https://vitest.dev/), React Testing Library, [Supertest](https://github.com/forwardemail/supertest) |
+| Hosting | [Vercel](https://vercel.com/), [Render](https://render.com/), [Supabase](https://supabase.com/) |
 
-All seeded Program Officer and Reviewer accounts use the development-only password `Demo123!`. For example, use `maya.officer@example.test` for a Program Officer or `ava.reviewer@example.test` for a Reviewer. These credentials are for local demonstration only and must not be used in production.
+## Repository Layout
 
-## Application API
+```text
+backend/    Express API, Prisma schema/migrations, seed, and API tests
+frontend/   React/Vite SPA and UI tests
+docs/       Architecture, schema, decisions, plan, and AI-use notes
+```
 
-Phase 5 application routes are Program Officer-only: `POST /applications`, `GET /applications`, `GET /applications/:id`, `PATCH /applications/:id`, `POST /applications/:id/archive`, and `POST /applications/:id/restore`. `requestedAmount` uses an exact decimal string such as `"1000.01"`; archive and restore change `archivedAt` rather than deleting the record.
+## Run Locally
 
-## Assignment API
+Prerequisites: Node.js 20+ and PostgreSQL. Copy `backend/.env.example` to `backend/.env`, replace all placeholders, and never commit it.
 
-Program Officers manage `POST` and `GET /applications/:applicationId/assignments`, plus `PATCH` and `DELETE /assignments/:assignmentId`; Reviewers can use only `GET /reviewer/assignments`. A valid assignment moves a `SUBMITTED` application to `ASSIGNED` and records a status audit event. Archived and decided applications reject new assignments. Removal is historical via `removedAt`, does not change application status, and prevents further due-date edits; removed records remain visible in assignment lists.
+```bash
+# Terminal 1
+cd backend
+npm install
+npm run db:generate
+npx prisma migrate deploy
+npm run db:seed  # development only; resets and recreates demo data
+npm run dev
+```
 
-## Review API
+```bash
+# Terminal 2
+cd frontend
+npm install
+npm run dev
+```
 
-Reviewers create and retrieve their own drafts at `POST` and `GET /assignments/:assignmentId/review`, edit drafts with `PATCH /reviews/:reviewId`, complete them through `POST /reviews/:reviewId/complete`, and declare assigned-work conflicts through `POST /assignments/:assignmentId/conflict`. Draft scores are optional but must be integer values from 1 to 5 when provided. First draft creation moves `ASSIGNED` applications to `UNDER_REVIEW`; completed reviews are immutable and appear, without drafts, in Program Officer application detail.
+Open the Vite URL, normally `http://localhost:5173`.
 
-## Lifecycle And Decision API
+| Backend variable | Purpose |
+| --- | --- |
+| `DATABASE_URL` | Runtime PostgreSQL URL used by the API. |
+| `DIRECT_URL` | Direct PostgreSQL URL for Prisma migration/seed operations. |
+| `JWT_SECRET` | Private random secret of at least 32 characters. |
+| `JWT_EXPIRES_IN` | Token duration, for example `1h`. |
+| `FRONTEND_URL` | Exact frontend CORS origin. |
+| `NODE_ENV` | `development`, `test`, or `production`. |
+| `PORT` | Optional API port; defaults to `4000`. |
 
-Program Officers can explicitly move an assigned application into active review with `POST /applications/:id/status` and `{ "status": "UNDER_REVIEW" }`. The generic status route cannot set `DECIDED`, archived applications reject lifecycle mutation, and the existing automatic Phase 7 transition on first draft creation remains valid.
+The frontend requires `VITE_API_BASE_URL` for production builds; development defaults to `http://localhost:4000`.
 
-Final decisions use the dedicated `POST /applications/:id/decision` route with `{ "decision": "APPROVED" }` or `{ "decision": "DECLINED" }`. A decision is allowed only from `UNDER_REVIEW`, requires at least three completed reviews, excludes drafts from the threshold, writes transactional lifecycle and decision audit events, and creates one immutable `FundingDecision` record per application. Application detail returns this record as `fundingDecision`, or `null` when undecided.
+## Validate
 
-## Timeline And Alerts API
+```bash
+cd backend && npm test && npm run build
+cd frontend && npm test
+VITE_API_BASE_URL=https://grant-review.onrender.com npm run build
+```
 
-Program Officers can retrieve append-only application history at `GET /applications/:applicationId/timeline` and add immutable informational comments at `POST /applications/:applicationId/comments`. Comments are blocked for archived applications and remain allowed after a decision. `GET /alerts/overdue`, `GET /alerts/overdue/count`, and `POST /alerts/overdue/:alertId/dismiss` provide active overdue-review alerts, a navigation-badge count, and idempotent dismissal. Alerts are retained historically and each assignment due-date occurrence can create only one alert.
+In constrained sandboxes, Supertest may be blocked from opening its listener with `listen EPERM`; run backend tests in an unrestricted local or CI environment in that case.
 
-## Dashboard API
+## Deploy
 
-Program Officers can retrieve `GET /dashboard` for open-application, overdue-review, and
-ready-for-decision counts; the current month's exact requested total; application breakdowns by
-lifecycle status and funding round; and the last eight Monday-start UTC decision-week buckets.
+### Render API
 
-## Documentation
+- Root: `backend`
+- Build: `npm ci --include=dev && npm run db:generate && npx prisma migrate deploy && npm run build`
+- Start: `npm start`
+- Health check: `/health`
+- Private variables: `DATABASE_URL`, `DIRECT_URL`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `FRONTEND_URL`, and `NODE_ENV=production`.
 
-- `docs/plan.md` contains the full implementation roadmap across all phases
-- `docs/architecture.md` captures the current backend boundaries and planned system shape
-- `docs/decisions.md` records project decisions and trade-offs
-- `docs/schema.md` describes the implemented relational schema and its enforcement boundaries
-- `docs/ai-prompts.md` logs AI usage as work progresses
+### Vercel Frontend
 
-## Notes
+- Root: `frontend`
+- Build: `npm run build`
+- Output: `dist`
+- Build variable: `VITE_API_BASE_URL=https://grant-review.onrender.com`
+- `frontend/vercel.json` rewrites browser paths to `index.html`.
 
-- `SUBMISSION.md` has been preserved as-is for later completion.
-- Run `npm test` and `npm run build` from `backend/` to validate the current backend implementation.
+## Further Reading
+
+- [Architecture](docs/architecture.md)
+- [Schema](docs/schema.md)
+- [Implementation plan](docs/plan.md)
+- [Design decisions](docs/decisions.md)
+- [AI-use notes](docs/ai-prompts.md)
+- [Submission guide](SUBMISSION.md)

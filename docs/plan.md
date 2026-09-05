@@ -1,125 +1,30 @@
-# Implementation Plan
+# Implementation Plan And Completion Record
 
-## Phase 1 — Project Initialization
-- Establish repository structure
-- Separate frontend and backend
-- Establish documentation structure
-- Record initial architectural decisions
+| Phase | Outcome | Status |
+| --- | --- | --- |
+| 1–3 | Repository setup, Express foundation, Prisma/PostgreSQL persistence, migrations, and seed data. | Complete |
+| 4 | JWT login, bearer authentication, safe user profiles, and role middleware. | Complete |
+| 5 | Application CRUD, archive/restore, discovery, exact decimals, and audit events. | Complete |
+| 6 | Reviewer directory, assignments, capacity/conflict checks, removal, and due dates. | Complete |
+| 7 | Reviewer drafts, completed reviews, ownership checks, and conflicts. | Complete |
+| 8 | Lifecycle controls and decisions requiring three completed reviews. | Complete |
+| 9 | Timeline/comments and overdue alerts. | Complete |
+| 10 | Search/filter/sort/pagination, bulk assignment, and CSV reporting. | Complete |
+| 11 | Program Officer dashboard aggregates. | Complete |
+| 12 | Role-aware frontend workflows, reporting, alerts, dashboard, and UI race tests. | Complete |
+| 13 | Acceptance audit, timeline/comments UI, and freshness regressions. | Complete |
+| 14 | Theme system, responsive navigation, evaluator login, and Vercel SPA routing. | Complete |
+| 15 | Final documentation, deployment guidance, and submission polish. | In final review; pending final commit |
 
-## Phase 2 — Backend Foundation (Complete)
-- Initialize TypeScript backend
-- Configure application entry point
-- Environment configuration
-- Error handling
-- Health check
-- Backend testing foundation
+## Delivery Principles
 
-## Phase 3 — Database (Complete)
-- Select and configure PostgreSQL
-- Configure Prisma
-- Design relational schema
-- Create migrations
-- Create seed/demo data
+1. Enforce roles and workflow rules in the API, not by hiding frontend controls.
+2. Preserve history through append-only audit events and soft historical records.
+3. Use deterministic tests for visible behavior and asynchronous race protection.
+4. Keep deployment ownership explicit: runtime/migration database URLs, CORS origin, and build-time frontend API URL.
 
-## Phase 4 — Authentication and Authorization (Complete)
-- User authentication
-- Program Officer role
-- Reviewer role
-- Server-side authorization
-- Protected API routes
+## Post-Submission Improvements
 
-## Phase 5 — Grant Applications (Complete)
-- Funding rounds
-- Application creation
-- Application editing
-- Application archive/restore
-- Application ownership
-
-## Phase 6 — Reviewer Assignment (Complete)
-- Reviewer assignment
-- Reviewer workload limits
-- Conflict-of-interest handling
-- Due dates
-- Assignment removal
-- First-assignment `SUBMITTED` to `ASSIGNED` transition with audit history
-
-## Phase 7 — Review Workflow (Complete)
-- Review creation
-- Draft reviews
-- Review scoring
-- Review comments
-- Review completion
-- Review immutability
-
-## Phase 8 — Application Lifecycle (Complete)
-- Application status transitions
-- Server-side transition validation
-- Explicit Program Officer `ASSIGNED` to `UNDER_REVIEW` control
-- Compatibility with the automatic first-draft `UNDER_REVIEW` transition
-- Three-completed-review requirement
-- Draft exclusion from the decision threshold
-- Dedicated funding decisions
-
-## Phase 9 — Audit History and Alerts (Complete)
-- Immutable application history
-- Audit events
-- Overdue review detection
-- Alert dismissal
-- Alert reappearance after due-date changes
-
-## Phase 10 — Search, Filtering and Reporting (Complete)
-- Server-side search
-- Filtering
-- Sorting
-- Pagination
-- Bulk reviewer assignment
-- CSV export
-
-## Phase 11 — Dashboard (Complete)
-- Application statistics
-- Review statistics
-- Overdue statistics
-- Funding-round statistics
-- Decision trends
-
-## Phase 12 — Frontend (12A Complete)
-- Authentication UI
-- Program Officer interface
-- Reviewer interface
-- Application management
-- Reviewer management
-- Review interface
-- Dashboard
-- Alerts
-
-### Phase 12A — Frontend Foundation And Authentication (Complete)
-- Vite React TypeScript foundation
-- Configurable API client
-- Persisted authentication and `/auth/me` restoration
-- Role-aware routing and shell placeholders
-
-## Phase 13 — Testing and Validation
-- Unit tests
-- API tests
-- Authorization tests
-- Business-rule tests
-- Workflow tests
-- Edge cases
-
-## Phase 14 — Deployment
-- Production environment configuration
-- Hosted PostgreSQL
-- Backend deployment on Render
-- Frontend deployment
-- CORS configuration
-- Production smoke testing
-
-## Phase 15 — Documentation and Submission
-- README
-- Architecture documentation
-- Schema documentation
-- Technical decisions
-- AI development log
-- Demo credentials
-- SUBMISSION.md
-- Final deployment verification
+- Refresh-token/session revocation and production account provisioning.
+- Transactional locking for concurrent reviewer-capacity enforcement.
+- Database score `CHECK` constraints, observability, CI, accessibility, and browser end-to-end coverage.
