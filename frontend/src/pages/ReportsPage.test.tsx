@@ -14,6 +14,7 @@ const reviewers = [
   { id: "reviewer-a", name: "Ava Adams", email: "ava@example.test", role: "REVIEWER" as const },
   { id: "reviewer-b", name: "Ben Brooks", email: "ben@example.test", role: "REVIEWER" as const },
 ];
+const calibration = { globalOverallAverage: 3.5, reviewers: [{ reviewerId: "reviewer-a", reviewerName: "Ava Adams", reviewerEmail: "ava@example.test", completedReviewCount: 3, averageImpact: 3.2, averageFeasibility: 3.5, averageBudgetJustification: 3.8, overallAverage: 3.5, overallDifference: 0, tendency: "Around average" }] };
 let fetchMock: ReturnType<typeof vi.fn>;
 const downloads: string[] = [];
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -38,6 +39,7 @@ function normalHandler(url: string) {
   if (url.endsWith("/auth/me")) return Promise.resolve(json({ user: officer }));
   if (url.endsWith("/funding-rounds")) return Promise.resolve(json({ fundingRounds: rounds }));
   if (url.endsWith("/reviewers")) return Promise.resolve(json({ reviewers }));
+  if (url.includes("/reviewers/calibration")) return Promise.resolve(json({ calibration }));
   return Promise.reject(new Error(`Unexpected request: ${url}`));
 }
 
@@ -52,6 +54,67 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("ReportsPage", () => {
+  it("renders completed-review calibration and refetches it for a selected round", async () => {
+    restore(normalHandler);
+    renderPage();
+    expect(await screen.findByRole("heading", { name: "Reviewer Calibration" })).toBeInTheDocument();
+    expect(await screen.findByText("Around average")).toBeInTheDocument();
+    fireEvent.change(screen.getByRole("combobox", { name: "Funding round" }), { target: { value: "round-a" } });
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("http://localhost:4000/reviewers/calibration?fundingRoundId=round-a", expect.anything()));
+  });
+
+  it("renders a calibration empty state without retaining earlier reviewer rows", async () => {
+    restore((url) => {
+      if (url.endsWith("/reviewers/calibration?fundingRoundId=round-a")) return Promise.resolve(json({ calibration: { globalOverallAverage: 0, reviewers: [] } }));
+      return normalHandler(url);
+    });
+    renderPage();
+    expect(await screen.findByText("Around average")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByRole("combobox", { name: "Funding round" }), { target: { value: "round-a" } });
+
+    expect(await screen.findByText("No completed reviews are available for this scope.")).toBeInTheDocument();
+    expect(screen.queryByText("Around average")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Overall benchmark:/)).not.toBeInTheDocument();
+  });
+
+  it("renders calibration errors while leaving funding-round discovery usable", async () => {
+    restore((url) => {
+      if (url.includes("/reviewers/calibration")) return Promise.resolve(json({ message: "Calibration is temporarily unavailable." }, 503));
+      return normalHandler(url);
+    });
+    renderPage();
+
+    expect(await screen.findByText("Calibration is temporarily unavailable.")).toBeInTheDocument();
+    expect(await screen.findByRole("option", { name: "Autumn grants" })).toBeInTheDocument();
+  });
+
+  it("keeps the newest calibration result when an earlier round response resolves late", async () => {
+    let resolveRoundA!: (response: Response) => void;
+    let resolveRoundB!: (response: Response) => void;
+    const roundA = new Promise<Response>((resolve) => { resolveRoundA = resolve; });
+    const roundB = new Promise<Response>((resolve) => { resolveRoundB = resolve; });
+    const calibrationA = { ...calibration, reviewers: [{ ...calibration.reviewers[0], reviewerName: "Stale Ava", tendency: "More stringent" }] };
+    const calibrationB = { ...calibration, reviewers: [{ ...calibration.reviewers[0], reviewerName: "Fresh Ben", tendency: "More lenient" }] };
+    restore((url) => {
+      if (url.endsWith("/reviewers/calibration?fundingRoundId=round-a")) return roundA;
+      if (url.endsWith("/reviewers/calibration?fundingRoundId=round-b")) return roundB;
+      return normalHandler(url);
+    });
+    renderPage();
+    await screen.findByText("Around average");
+
+    fireEvent.change(screen.getByRole("combobox", { name: "Funding round" }), { target: { value: "round-a" } });
+    expect(await screen.findByText("Loading calibration...")).toBeInTheDocument();
+    fireEvent.change(screen.getByRole("combobox", { name: "Funding round" }), { target: { value: "round-b" } });
+    await act(async () => { resolveRoundB(json({ calibration: calibrationB })); await Promise.resolve(); });
+    expect(await screen.findByText("Fresh Ben")).toBeInTheDocument();
+
+    await act(async () => { resolveRoundA(json({ calibration: calibrationA })); await Promise.resolve(); });
+    expect(screen.getByText("Fresh Ben")).toBeInTheDocument();
+    expect(screen.queryByText("Stale Ava")).not.toBeInTheDocument();
+    expect(screen.queryByText("Loading calibration...")).not.toBeInTheDocument();
+  });
   it("loads funding rounds and reviewers from their directories", async () => {
     restore(normalHandler);
     renderPage();
@@ -69,7 +132,7 @@ describe("ReportsPage", () => {
       return Promise.reject(new Error(`Unexpected request: ${url}`));
     });
     renderPage();
-    expect(await screen.findByRole("alert")).toHaveTextContent("Funding rounds unavailable.");
+    expect(await screen.findByText("Funding rounds unavailable.")).toBeInTheDocument();
 
     localStorage.setItem(tokenKey, "token");
     fetchMock = vi.fn((url: string) => {
