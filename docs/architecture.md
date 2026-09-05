@@ -34,12 +34,27 @@ Prisma maps relational models and migrations to PostgreSQL. Runtime uses pooled 
 
 Cross-record workflow writes are transactional: assignments with status/audit events, reviews with lifecycle/audit events, decisions with application/audit events, and archive/restore with audit events. The development seed deletes and recreates demo data, so it is for disposable local environments only.
 
+The optional calibration read flow uses the existing Program Officer Reports page to request completed-review aggregates from `GET /reviewers/calibration`, optionally scoped by funding round. It is a read-only derived report over existing review, assignment, and application relationships.
+
 ## Representative Flow
 
-1. A Program Officer assigns an eligible reviewer; the service rejects archived/decided work, active duplicates, unresolved conflicts, and a reviewer already at five active assignments.
-2. A Reviewer saves a draft or completes all three 1–5 scores. The first draft can move an assigned application to `UNDER_REVIEW`.
-3. A Program Officer records a decision only for an unarchived `UNDER_REVIEW` application with at least three completed reviews.
-4. Services persist the state transition and append timeline events in the same transaction.
+1. A Program Officer selects a reviewer in the Vercel-hosted React application.
+2. The typed client sends `POST /applications/:applicationId/assignments` to Render with a bearer token.
+3. Authentication validates the JWT and role middleware requires `PROGRAM_OFFICER`.
+4. The assignment service checks the application state, active duplicate, unresolved conflict, and five-active-assignment limit.
+5. Prisma writes the assignment, any `SUBMITTED -> ASSIGNED` transition, and audit event in one PostgreSQL transaction.
+6. The API returns a safe assignment projection and the frontend refreshes the selected application.
+
+## Runtime Locations
+
+- Browser: React/TypeScript/Vite UI and React Router state.
+- Vercel: static frontend build and SPA fallback rewrite.
+- Render: Express REST API, authentication, authorization, workflow services, and CORS enforcement.
+- Supabase: managed PostgreSQL database; Prisma is the API's data-access layer.
+
+## Deliberately Not Built
+
+This take-home does not include applicant self-service, email delivery, background queues or cron jobs, configurable rubrics, automatic reviewer matching, refresh-token revocation, production account provisioning, or Supabase Auth/Storage/Edge Functions.
 
 ## Deployment
 

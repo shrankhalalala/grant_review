@@ -25,6 +25,7 @@ The login page's evaluator selectors fill these public development credentials b
 - Dedicated funding decisions after three completed reviews; append-only timeline events and comments.
 - Overdue alerts, dashboard metrics, funding-round reporting, and safe completed-review CSV export.
 - Server-enforced roles, responsive navigation, persistent light/dark theme, and stale-response protections.
+- **Optional stretch: Reviewer Calibration Reports** in Program Officer Reports compare completed-review criterion averages, overall benchmark differences, and descriptive tendencies; the existing funding-round selector scopes the report.
 
 ## Architecture
 

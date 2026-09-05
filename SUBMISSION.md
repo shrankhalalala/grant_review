@@ -8,6 +8,10 @@
 
 The Render API can cold-start after inactivity. Vercel direct links are supported by the SPA rewrite.
 
+## Notes For The Reviewer
+
+The backend is hosted on Render's free tier and may spin down after inactivity. The first request after an idle period can take around a minute while the service wakes; subsequent requests should respond normally.
+
 ## Demo Credentials
 
 | Role | Email | Password |
@@ -17,7 +21,7 @@ The Render API can cold-start after inactivity. Vercel direct links are supporte
 
 The login page includes selectors that fill these evaluation credentials while preserving normal login submission.
 
-## Feature Verification
+## 10-Goal Checklist
 
 | Area | How to verify | Notes |
 | --- | --- | --- |
@@ -32,6 +36,18 @@ The login page includes selectors that fill these evaluation credentials while p
 | UI resilience | Switch applications while content loads. | Freshness guards prevent stale response overwrites. |
 | Navigation and theme | Use sidebar and theme controls. | Navigation is responsive/collapsible; preference persists. |
 
+## Actual Time Spent
+
+Exact hours were not recorded reliably in the repository, so this submission does not invent a number. The Git history records the implementation work across September 3–5, 2026.
+
+## With Another 12 Hours
+
+I would add end-to-end browser coverage and accessibility review, session revocation/account provisioning, database-level score checks, reviewer-capacity concurrency protection, and production observability.
+
+## Least Happy With
+
+The compact Reports page carries several related tools in one screen. It is effective for the take-home scope, but a larger product would benefit from more deliberate information hierarchy and an end-to-end workflow test suite around those interactions.
+
 ## Stack
 
 | Layer | Implementation |
@@ -40,6 +56,10 @@ The login page includes selectors that fill these evaluation credentials while p
 | Backend | TypeScript/Express with JWT authentication on Render. |
 | Database | Prisma with Supabase PostgreSQL. |
 | Testing | Vitest, React Testing Library, and Supertest. |
+
+## Optional Stretch Feature
+
+Program Officers can open **Reports** to view Reviewer Calibration. It aggregates completed reviews only, showing criterion averages, an overall benchmark and reviewer difference, and optional funding-round scope. Reviewers with fewer than three completed reviews are labelled **Limited data**; otherwise a difference of at least 0.5 is described as more lenient or more stringent. It describes scoring tendency, not reviewer quality.
 
 ## Local Run
 

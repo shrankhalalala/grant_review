@@ -14,7 +14,14 @@
 | 12 | Role-aware frontend workflows, reporting, alerts, dashboard, and UI race tests. | Complete |
 | 13 | Acceptance audit, timeline/comments UI, and freshness regressions. | Complete |
 | 14 | Theme system, responsive navigation, evaluator login, and Vercel SPA routing. | Complete |
-| 15 | Final documentation, deployment guidance, and submission polish. | In final review; pending final commit |
+| 15 | Final documentation, deployment guidance, and submission polish. | Complete |
+| Post-15 stretch | Reviewer calibration reports from completed-review data. | In progress |
+
+## Sessions, Order, And Scope
+
+Git history records the work in ordered sessions: foundation and schema, authentication, applications, assignments, reviews, lifecycle, timeline/alerts, discovery/reporting, dashboard, frontend workflows, acceptance fixes, UI/deployment polish, then documentation. The order front-loaded server-enforced data and workflow contracts so the frontend could integrate stable APIs and tests could validate each incremental boundary.
+
+Estimated versus actual time was not reliably recorded, so no precise hours are claimed. Scope was intentionally cut around applicant portals, notifications, automatic matching, configurable rubrics, queues, and paid infrastructure; these would add workflow or operational complexity beyond the take-home's core goals.
 
 ## Delivery Principles
 

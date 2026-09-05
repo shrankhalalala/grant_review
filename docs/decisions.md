@@ -35,3 +35,11 @@ Selection and timeline requests have identity/version protections. Deterministic
 ## Configuration Outside Source
 
 Secrets are private deployment values. Vite receives the public API origin during build; Render receives the backend CORS origin and private runtime values. A small Vercel rewrite enables SPA routing without changing application routes.
+
+## Reversed Hosting Decision
+
+An early hosted PostgreSQL direction considered Neon. Connection attempts documented in the project prompt record did not succeed in the development network, so the final hosted database is Supabase PostgreSQL. Prisma and the relational schema stayed the same; only the managed host changed. Supabase Auth was explicitly rejected because the existing backend JWT model already owned authentication and authorization.
+
+## Calibration Instead Of Higher-Risk Stretch Work
+
+Reviewer calibration was chosen because completed Review data already supports it, it adds analytical value without a new workflow or authentication model, and it needs no migration. Applicant portals, email notifications, configurable rubrics, and automatic reviewer matching were deferred because each would substantially expand domain and infrastructure complexity.
